@@ -1,4 +1,22 @@
 import { useEffect, useMemo, useState, type CSSProperties } from 'react';
+import confetti from 'canvas-confetti';
+import {
+  BookmarkPlus,
+  CalendarDays,
+  Check,
+  Copy,
+  Moon,
+  Palette,
+  RotateCcw,
+  Save,
+  Settings,
+  Sparkles,
+  Sun,
+  Target,
+  Trophy,
+  X,
+  Zap,
+} from 'lucide-react';
 import quoteParts from './data/quotes.json';
 
 type Quote = {
@@ -15,6 +33,7 @@ type Theme = {
   id: string;
   title: string;
   color: string;
+  contrast: '#111318' | '#ffffff';
 };
 
 type ProgressState = {
@@ -31,6 +50,7 @@ type Level = {
 };
 
 const STORAGE_KEY = 'one-thousand-no-progress';
+const SAVED_QUOTES_KEY = 'one-thousand-no-saved-quotes';
 
 const LEVELS: Level[] = [
   {
@@ -71,18 +91,18 @@ const LEVELS: Level[] = [
 ];
 
 const THEMES: Theme[] = [
-  { id: 'yellow-energy', title: 'Жёлтая энергия', color: '#FFD21F' },
-  { id: 'greenway-green', title: 'Greenway Green', color: '#21B573' },
-  { id: 'deep-indigo', title: 'Глубокий индиго', color: '#3030A3' },
-  { id: 'electric-blue', title: 'Электрик blue', color: '#2563EB' },
-  { id: 'red-drive', title: 'Красный драйв', color: '#EF4444' },
-  { id: 'orange-pulse', title: 'Оранжевый импульс', color: '#F97316' },
-  { id: 'violet-focus', title: 'Фиолетовый фокус', color: '#7C3AED' },
-  { id: 'pink-neon', title: 'Розовый неон', color: '#EC4899' },
-  { id: 'turquoise-flow', title: 'Бирюзовый поток', color: '#06B6D4' },
-  { id: 'gold-status', title: 'Золотой статус', color: '#D6A21E' },
-  { id: 'graphite-minimal', title: 'Графитовый минимализм', color: '#374151' },
-  { id: 'mint-fresh', title: 'Мятная свежесть', color: '#2DD4BF' },
+  { id: 'yellow-energy', title: 'Жёлтая энергия', color: '#FFD21F', contrast: '#111318' },
+  { id: 'greenway-green', title: 'Greenway Green', color: '#21B573', contrast: '#111318' },
+  { id: 'deep-indigo', title: 'Глубокий индиго', color: '#3030A3', contrast: '#ffffff' },
+  { id: 'electric-blue', title: 'Электрик blue', color: '#2563EB', contrast: '#ffffff' },
+  { id: 'red-drive', title: 'Красный драйв', color: '#EF4444', contrast: '#ffffff' },
+  { id: 'orange-pulse', title: 'Оранжевый импульс', color: '#F97316', contrast: '#111318' },
+  { id: 'violet-focus', title: 'Фиолетовый фокус', color: '#7C3AED', contrast: '#ffffff' },
+  { id: 'pink-neon', title: 'Розовый неон', color: '#EC4899', contrast: '#ffffff' },
+  { id: 'turquoise-flow', title: 'Бирюзовый поток', color: '#06B6D4', contrast: '#111318' },
+  { id: 'gold-status', title: 'Золотой статус', color: '#D6A21E', contrast: '#111318' },
+  { id: 'graphite-minimal', title: 'Графитовый минимализм', color: '#374151', contrast: '#ffffff' },
+  { id: 'mint-fresh', title: 'Мятная свежесть', color: '#2DD4BF', contrast: '#111318' },
 ];
 
 const quotesSource = quoteParts as QuoteParts;
@@ -129,6 +149,15 @@ function getStoredState(): ProgressState {
   }
 }
 
+function getStoredSavedQuotes(): string[] {
+  try {
+    const stored = localStorage.getItem(SAVED_QUOTES_KEY);
+    return stored ? JSON.parse(stored) : [];
+  } catch {
+    return [];
+  }
+}
+
 function clampProgress(value: number): number {
   return Math.min(1000, Math.max(0, value));
 }
@@ -171,6 +200,9 @@ function App() {
   const [state, setState] = useState<ProgressState>(getStoredState);
   const [toast, setToast] = useState<string>('');
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [modalQuote, setModalQuote] = useState<Quote | null>(null);
+  const [copied, setCopied] = useState(false);
+  const [savedQuotes, setSavedQuotes] = useState<string[]>(getStoredSavedQuotes);
   const quotes = useMemo(() => createQuotes(quotesSource), []);
 
   const theme = THEMES.find((item) => item.id === state.themeId) ?? THEMES[0];
@@ -185,39 +217,66 @@ function App() {
   }, [state]);
 
   useEffect(() => {
+    localStorage.setItem(SAVED_QUOTES_KEY, JSON.stringify(savedQuotes));
+  }, [savedQuotes]);
+
+  useEffect(() => {
     if (!toast) {
       return;
     }
 
-    const timeoutId = window.setTimeout(() => setToast(''), 2800);
+    const timeoutId = window.setTimeout(() => setToast(''), 2400);
 
     return () => window.clearTimeout(timeoutId);
   }, [toast]);
 
-  function updateNoCount(nextValue: number) {
+  function launchConfetti() {
+    const defaults = {
+      spread: 78,
+      ticks: 70,
+      gravity: 0.95,
+      decay: 0.92,
+      startVelocity: 34,
+      colors: [theme.color, '#ffffff', '#111318', '#FACC15'],
+      origin: { y: 0.64 },
+    };
+
+    confetti({ ...defaults, particleCount: 90, scalar: 1 });
+    window.setTimeout(() => confetti({ ...defaults, particleCount: 50, scalar: 0.74, angle: 60 }), 120);
+    window.setTimeout(() => confetti({ ...defaults, particleCount: 50, scalar: 0.74, angle: 120 }), 170);
+  }
+
+  function updateNoCount(nextValue: number, options?: { showQuote?: boolean; celebrate?: boolean }) {
     const nextNoCount = clampProgress(nextValue);
     const newLevel = LEVELS.find((level) => level.threshold === nextNoCount);
+    const nextQuote = getClickQuote(nextNoCount, quotes);
 
     setState((current) => ({
       ...current,
       noCount: nextNoCount,
     }));
 
+    if (options?.celebrate && nextNoCount > 0) {
+      launchConfetti();
+    }
+
+    if (options?.showQuote && nextNoCount > 0) {
+      setCopied(false);
+      setModalQuote(nextQuote);
+    }
+
     if (newLevel) {
-      setToast(`Новый уровень: ${newLevel.title}! ${newLevel.description}`);
+      setToast(`Новый уровень: ${newLevel.title}!`);
       return;
     }
 
     if (nextNoCount >= 1000) {
       setToast('1000 НЕТ пройдены. Ты стал легендой отказов.');
-      return;
     }
-
-    setToast(getClickQuote(nextNoCount, quotes).text);
   }
 
   function handleAddNo() {
-    updateNoCount(state.noCount + 1);
+    updateNoCount(state.noCount + 1, { showQuote: true, celebrate: true });
   }
 
   function handleUndo() {
@@ -238,11 +297,45 @@ function App() {
     setToast('Прогресс сброшен. Новый путь начинается с первого действия.');
   }
 
+  async function handleCopyQuote() {
+    if (!modalQuote) {
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(modalQuote.text);
+      setCopied(true);
+      setToast('Цитата скопирована.');
+    } catch {
+      setToast('Не удалось скопировать цитату.');
+    }
+  }
+
+  function handleSaveQuote() {
+    if (!modalQuote) {
+      return;
+    }
+
+    setSavedQuotes((current) => {
+      if (current.includes(modalQuote.text)) {
+        setToast('Эта цитата уже сохранена.');
+        return current;
+      }
+
+      setToast('Цитата сохранена.');
+      return [modalQuote.text, ...current];
+    });
+  }
+
   return (
     <main
       className={state.darkMode ? 'app app--dark' : 'app'}
-      style={{ '--accent': theme.color } as CSSProperties}
+      style={{ '--accent': theme.color, '--accent-contrast': theme.contrast } as CSSProperties}
     >
+      <div className="ambient ambient--one" />
+      <div className="ambient ambient--two" />
+      <div className="ambient ambient--three" />
+
       <section className="topbar" aria-label="Верхняя панель">
         <div className="topbar__brand">
           <span>1000 НЕТ</span>
@@ -255,7 +348,7 @@ function App() {
           aria-expanded={settingsOpen}
           aria-label="Открыть настройки оформления"
         >
-          ⚙️
+          <Settings size={22} />
         </button>
 
         {settingsOpen && (
@@ -266,40 +359,49 @@ function App() {
                 <h2>Настройки</h2>
               </div>
               <button className="panel-close" onClick={() => setSettingsOpen(false)} aria-label="Закрыть настройки">
-                ×
+                <X size={22} />
               </button>
             </div>
 
-            <div className="mode-row">
-              <div>
-                <strong>{state.darkMode ? 'Тёмная версия' : 'Светлая версия'}</strong>
-                <p>Переключи общий режим интерфейса.</p>
+            <div className="settings-group">
+              <div className="settings-label">
+                <Palette size={18} />
+                <span>Цвет темы</span>
+              </div>
+              <div className="color-grid" aria-label="Выбор цвета темы">
+                {THEMES.map((item) => (
+                  <button
+                    key={item.id}
+                    className={item.id === state.themeId ? 'color-swatch color-swatch--active' : 'color-swatch'}
+                    onClick={() => setState((current) => ({ ...current, themeId: item.id }))}
+                    style={{ backgroundColor: item.color }}
+                    title={item.title}
+                    aria-label={item.title}
+                  >
+                    {item.id === state.themeId && <Check size={18} />}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="settings-group settings-group--row">
+              <div className="settings-label">
+                {state.darkMode ? <Moon size={18} /> : <Sun size={18} />}
+                <span>{state.darkMode ? 'Тёмная тема' : 'Светлая тема'}</span>
               </div>
               <button
-                className="mode-toggle"
+                className={state.darkMode ? 'theme-switch theme-switch--dark' : 'theme-switch'}
                 onClick={() => setState((current) => ({ ...current, darkMode: !current.darkMode }))}
+                aria-label="Переключить светлую и тёмную тему"
               >
-                {state.darkMode ? 'Светлая' : 'Тёмная'}
+                <span>{state.darkMode ? <Moon size={18} /> : <Sun size={18} />}</span>
               </button>
-            </div>
-
-            <div className="theme-list">
-              {THEMES.map((item) => (
-                <button
-                  key={item.id}
-                  className={item.id === state.themeId ? 'theme-chip theme-chip--active' : 'theme-chip'}
-                  onClick={() => setState((current) => ({ ...current, themeId: item.id }))}
-                >
-                  <span style={{ backgroundColor: item.color }} />
-                  {item.title}
-                </button>
-              ))}
             </div>
           </div>
         )}
       </section>
 
-      <section className="hero">
+      <section className="hero glass-card glass-card--hero">
         <div>
           <p className="eyebrow">трекер отказов для сетевиков</p>
           <h1>1000 НЕТ</h1>
@@ -310,6 +412,7 @@ function App() {
         </div>
 
         <div className="hero__progress">
+          <Sparkles className="hero__progress-icon" size={28} />
           <span>{progressPercent}%</span>
           <p>{state.noCount}/1000</p>
         </div>
@@ -317,12 +420,14 @@ function App() {
 
       <section className="dashboard" aria-label="Дашборд прогресса">
         <article className="card card--accent">
+          <div className="card__icon"><Trophy size={20} /></div>
           <span>Уровень</span>
           <strong>{currentLevel.title}</strong>
           <p>{currentLevel.description}</p>
         </article>
 
         <article className="card">
+          <div className="card__icon"><Target size={20} /></div>
           <span>Сколько НЕТ</span>
           <strong>{state.noCount}/1000</strong>
           <p>
@@ -333,12 +438,14 @@ function App() {
         </article>
 
         <article className="card">
+          <div className="card__icon"><CalendarDays size={20} /></div>
           <span>День отказов</span>
           <strong>{daysFromStart} день</strong>
           <p>Путь начался {new Date(state.startDate).toLocaleDateString('ru-RU')}.</p>
         </article>
 
         <article className="card card--quote">
+          <div className="card__icon"><Zap size={20} /></div>
           <span>Фраза дня</span>
           <strong>{dailyQuote.text}</strong>
         </article>
@@ -346,17 +453,20 @@ function App() {
 
       <section className="actions" aria-label="Основные действия">
         <button className="primary-button" onClick={handleAddNo} disabled={state.noCount >= 1000}>
+          <Zap size={24} />
           +1 НЕТ
         </button>
         <button className="ghost-button" onClick={handleUndo} disabled={state.noCount <= 0}>
+          <RotateCcw size={18} />
           Отменить последнее
         </button>
         <button className="ghost-button" onClick={handleReset}>
+          <X size={18} />
           Сбросить
         </button>
       </section>
 
-      <section className="grid-section">
+      <section className="grid-section glass-card">
         <div className="section-heading">
           <div>
             <p className="eyebrow">1000 ячеек</p>
@@ -385,7 +495,7 @@ function App() {
         </div>
       </section>
 
-      <section className="levels">
+      <section className="levels glass-card">
         <div className="section-heading">
           <div>
             <p className="eyebrow">маршрут</p>
@@ -407,6 +517,39 @@ function App() {
           })}
         </div>
       </section>
+
+      {modalQuote && (
+        <div className="quote-overlay" role="dialog" aria-modal="true" aria-label="Мотивационная цитата">
+          <div className="quote-modal">
+            <button className="quote-close" onClick={() => setModalQuote(null)} aria-label="Закрыть цитату">
+              <X size={22} />
+            </button>
+
+            <div className="quote-badge">
+              <Sparkles size={18} />
+              НЕТ #{state.noCount}
+            </div>
+
+            <p className="quote-text">{modalQuote.text}</p>
+
+            <div className="quote-actions">
+              <button onClick={handleCopyQuote}>
+                {copied ? <Check size={18} /> : <Copy size={18} />}
+                {copied ? 'Скопировано' : 'Скопировать'}
+              </button>
+              <button onClick={handleSaveQuote}>
+                <Save size={18} />
+                Сохранить
+              </button>
+            </div>
+
+            <div className="saved-counter">
+              <BookmarkPlus size={16} />
+              Сохранено цитат: {savedQuotes.length}
+            </div>
+          </div>
+        </div>
+      )}
 
       {toast && <div className="toast">{toast}</div>}
     </main>
