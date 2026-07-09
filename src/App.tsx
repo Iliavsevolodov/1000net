@@ -52,9 +52,23 @@ type Level = {
   description: string;
 };
 
+type DailyLog = {
+  date: string;
+  count: number;
+};
+
+type Achievement = {
+  id: string;
+  title: string;
+  description: string;
+  unlocked: boolean;
+  icon: 'medal' | 'trophy';
+};
+
 const STORAGE_KEY = 'one-thousand-no-progress';
 const SAVED_QUOTES_KEY = 'one-thousand-no-saved-quotes';
 const ONBOARDING_KEY = 'one-thousand-no-onboarding-complete';
+const DAILY_LOGS_KEY = 'one-thousand-no-daily-logs';
 
 const LEVELS: Level[] = [
   { threshold: 10, title: 'Первые шаги', description: 'Ты начал путь и сделал первые действия.' },
@@ -115,6 +129,12 @@ function getTodayIso(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
+function getDateIsoDaysAgo(daysAgo: number): string {
+  const date = new Date();
+  date.setDate(date.getDate() - daysAgo);
+  return date.toISOString().slice(0, 10);
+}
+
 function getStoredState(): ProgressState {
   const fallback: ProgressState = {
     noCount: 0,
@@ -135,6 +155,20 @@ function getStoredSavedQuotes(): string[] {
   try {
     const stored = safeRead(SAVED_QUOTES_KEY);
     return stored ? JSON.parse(stored) : [];
+  } catch {
+    return [];
+  }
+}
+
+function getStoredDailyLogs(): DailyLog[] {
+  try {
+    const stored = safeRead(DAILY_LOGS_KEY);
+    const parsed = stored ? JSON.parse(stored) : [];
+    if (!Array.isArray(parsed)) return [];
+
+    return parsed
+      .filter((item) => typeof item?.date === 'string' && typeof item?.count === 'number')
+      .map((item) => ({ date: item.date, count: Math.max(0, item.count) }));
   } catch {
     return [];
   }
@@ -193,6 +227,88 @@ function getRandomQuote(quotes: Quote[], avoidQuoteId?: number): Quote {
   return quote;
 }
 
+function updateDailyLog(logs: DailyLog[], date: string, delta: number): DailyLog[] {
+  const existing = logs.find((item) => item.date === date);
+  const nextCount = Math.max(0, (existing?.count ?? 0) + delta);
+  const withoutDate = logs.filter((item) => item.date !== date);
+  const nextLogs = nextCount > 0 ? [{ date, count: nextCount }, ...withoutDate] : withoutDate;
+
+  return nextLogs
+    .sort((a, b) => b.date.localeCompare(a.date))
+    .slice(0, 120);
+}
+
+function getCountForDate(logs: DailyLog[], date: string): number {
+  return logs.find((item) => item.date === date)?.count ?? 0;
+}
+
+function getCurrentStreak(logs: DailyLog[]): number {
+  let streak = 0;
+
+  for (let index = 0; index < 365; index += 1) {
+    const date = getDateIsoDaysAgo(index);
+    const count = getCountForDate(logs, date);
+    if (count <= 0) break;
+    streak += 1;
+  }
+
+  return streak;
+}
+
+function getBestDay(logs: DailyLog[]): DailyLog | null {
+  if (logs.length === 0) return null;
+
+  return logs.reduce((best, current) => (current.count > best.count ? current : best), logs[0]);
+}
+
+function getHistoryDays(logs: DailyLog[], days = 7): DailyLog[] {
+  return Array.from({ length: days }, (_, index) => {
+    const date = getDateIsoDaysAgo(index);
+    return { date, count: getCountForDate(logs, date) };
+  });
+}
+
+function formatHistoryDate(date: string, index: number): string {
+  if (index === 0) return 'Сегодня';
+  if (index === 1) return 'Вчера';
+  const [, month, day] = date.split('-');
+  return `${day}.${month}`;
+}
+
+function getDayWord(value: number): string {
+  const lastDigit = value % 10;
+  const lastTwoDigits = value % 100;
+
+  if (lastTwoDigits >= 11 && lastTwoDigits <= 14) return 'дней';
+  if (lastDigit === 1) return 'день';
+  if (lastDigit >= 2 && lastDigit <= 4) return 'дня';
+  return 'дней';
+}
+
+function getAchievements(params: {
+  noCount: number;
+  streak: number;
+  activeDays: number;
+  bestDayCount: number;
+  savedQuotesCount: number;
+}): Achievement[] {
+  const { noCount, streak, activeDays, bestDayCount, savedQuotesCount } = params;
+
+  return [
+    { id: 'first-no', title: 'Первое НЕТ', description: 'Ты сделал первый шаг и зафиксировал первый отказ.', unlocked: noCount >= 1, icon: 'medal' },
+    { id: 'ten-no', title: 'Разогрев', description: '10 НЕТ собраны. Страх уже начинает слабеть.', unlocked: noCount >= 10, icon: 'medal' },
+    { id: 'fifty-no', title: 'Уже не страшно', description: '50 НЕТ — ты вошёл в рабочий темп.', unlocked: noCount >= 50, icon: 'medal' },
+    { id: 'hundred-no', title: 'Первая сотня', description: '100 НЕТ — первый большой психологический рубеж.', unlocked: noCount >= 100, icon: 'trophy' },
+    { id: 'three-streak', title: '3 дня подряд', description: 'Ты держишь темп несколько дней без паузы.', unlocked: streak >= 3, icon: 'medal' },
+    { id: 'seven-streak', title: 'Неделя действий', description: '7 дней подряд — это уже дисциплина.', unlocked: streak >= 7, icon: 'trophy' },
+    { id: 'best-day-ten', title: 'Сильный день', description: '10 НЕТ за один день. Хороший рабочий рывок.', unlocked: bestDayCount >= 10, icon: 'medal' },
+    { id: 'quote-saver', title: 'Коллекционер мыслей', description: 'Ты сохранил первую цитату в библиотеку.', unlocked: savedQuotesCount >= 1, icon: 'medal' },
+    { id: 'active-month', title: '30 активных дней', description: '30 дней с действиями — это уже система.', unlocked: activeDays >= 30, icon: 'trophy' },
+    { id: 'five-hundred', title: 'Железная психика', description: '500 НЕТ собраны. Отказы больше не управляют тобой.', unlocked: noCount >= 500, icon: 'trophy' },
+    { id: 'legend', title: 'Легенда отказов', description: '1000 НЕТ пройдены. Большинство даже не начинает этот путь.', unlocked: noCount >= 1000, icon: 'trophy' },
+  ];
+}
+
 function App() {
   const [state, setState] = useState<ProgressState>(getStoredState);
   const [toast, setToast] = useState<string>('');
@@ -201,6 +317,7 @@ function App() {
   const [lastQuoteId, setLastQuoteId] = useState<number | undefined>();
   const [copied, setCopied] = useState(false);
   const [savedQuotes, setSavedQuotes] = useState<string[]>(getStoredSavedQuotes);
+  const [dailyLogs, setDailyLogs] = useState<DailyLog[]>(getStoredDailyLogs);
   const [quoteLibraryOpen, setQuoteLibraryOpen] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(() => !getStoredOnboardingComplete());
   const [onboardingStep, setOnboardingStep] = useState(0);
@@ -212,6 +329,19 @@ function App() {
   const daysFromStart = getDaysFromStart(state.startDate);
   const progressPercent = Math.round((state.noCount / 1000) * 100);
   const dailyQuote = getDailyQuote(quotes);
+  const todayCount = getCountForDate(dailyLogs, getTodayIso());
+  const currentStreak = getCurrentStreak(dailyLogs);
+  const bestDay = getBestDay(dailyLogs);
+  const historyDays = getHistoryDays(dailyLogs, 7);
+  const activeDays = dailyLogs.filter((item) => item.count > 0).length;
+  const achievements = getAchievements({
+    noCount: state.noCount,
+    streak: currentStreak,
+    activeDays,
+    bestDayCount: bestDay?.count ?? 0,
+    savedQuotesCount: savedQuotes.length,
+  });
+  const unlockedAchievements = achievements.filter((achievement) => achievement.unlocked).length;
 
   useEffect(() => {
     safeWrite(STORAGE_KEY, JSON.stringify(state));
@@ -220,6 +350,10 @@ function App() {
   useEffect(() => {
     safeWrite(SAVED_QUOTES_KEY, JSON.stringify(savedQuotes));
   }, [savedQuotes]);
+
+  useEffect(() => {
+    safeWrite(DAILY_LOGS_KEY, JSON.stringify(dailyLogs));
+  }, [dailyLogs]);
 
   useEffect(() => {
     if (!toast) return;
@@ -279,10 +413,16 @@ function App() {
   }
 
   function handleAddNo() {
+    if (state.noCount >= 1000) return;
+
+    setDailyLogs((current) => updateDailyLog(current, getTodayIso(), 1));
     updateNoCount(state.noCount + 1, { showQuote: true, celebrate: true });
   }
 
   function handleUndo() {
+    if (state.noCount <= 0) return;
+
+    setDailyLogs((current) => updateDailyLog(current, getTodayIso(), -1));
     updateNoCount(state.noCount - 1);
   }
 
@@ -291,6 +431,7 @@ function App() {
     if (!confirmed) return;
 
     setState((current) => ({ ...current, noCount: 0, startDate: getTodayIso() }));
+    setDailyLogs([]);
     setSettingsOpen(false);
     setToast('Прогресс сброшен. Новый путь начинается с первого действия.');
   }
@@ -465,6 +606,34 @@ function App() {
         </article>
       </section>
 
+      <section className="rhythm-section glass-card">
+        <div className="section-heading">
+          <div>
+            <p className="eyebrow">ритм действий</p>
+            <h2>Статистика</h2>
+          </div>
+          <p>Здесь видно не только количество НЕТ, но и твою стабильность.</p>
+        </div>
+
+        <div className="rhythm-grid">
+          <article className="rhythm-card rhythm-card--accent">
+            <span>Сегодня</span>
+            <strong>{todayCount}</strong>
+            <p>НЕТ за день</p>
+          </article>
+          <article className="rhythm-card">
+            <span>Серия</span>
+            <strong>{currentStreak}</strong>
+            <p>{getDayWord(currentStreak)} подряд</p>
+          </article>
+          <article className="rhythm-card">
+            <span>Лучший день</span>
+            <strong>{bestDay?.count ?? 0}</strong>
+            <p>{bestDay ? bestDay.date.split('-').reverse().slice(0, 2).join('.') : 'пока нет данных'}</p>
+          </article>
+        </div>
+      </section>
+
       <section className="grid-section glass-card">
         <div className="section-heading">
           <div>
@@ -502,6 +671,36 @@ function App() {
         </div>
       </section>
 
+      <section className="history-section glass-card">
+        <div className="section-heading">
+          <div>
+            <p className="eyebrow">история</p>
+            <h2>По дням</h2>
+          </div>
+          <p>Последние 7 дней. Пустой день — это не провал, а сигнал вернуться в действие.</p>
+        </div>
+
+        <div className="history-list">
+          {historyDays.map((item, index) => {
+            const maxValue = Math.max(1, ...historyDays.map((day) => day.count));
+            const width = Math.max(4, Math.round((item.count / maxValue) * 100));
+
+            return (
+              <article className="history-row" key={item.date}>
+                <div>
+                  <strong>{formatHistoryDate(item.date, index)}</strong>
+                  <span>{item.date.split('-').reverse().slice(0, 2).join('.')}</span>
+                </div>
+                <div className="history-bar" aria-label={`${item.count} НЕТ`}>
+                  <span style={{ width: `${item.count > 0 ? width : 0}%` }} />
+                </div>
+                <b>{item.count}</b>
+              </article>
+            );
+          })}
+        </div>
+      </section>
+
       <section className="levels glass-card">
         <div className="section-heading">
           <div>
@@ -528,6 +727,30 @@ function App() {
               </article>
             );
           })}
+        </div>
+      </section>
+
+      <section className="achievements-section glass-card">
+        <div className="section-heading">
+          <div>
+            <p className="eyebrow">достижения</p>
+            <h2>{unlockedAchievements}/{achievements.length}</h2>
+          </div>
+          <p>Достижения открываются за количество НЕТ, стабильность, сильные дни и сохранённые цитаты.</p>
+        </div>
+
+        <div className="achievement-list">
+          {achievements.map((achievement) => (
+            <article key={achievement.id} className={achievement.unlocked ? 'achievement achievement--unlocked' : 'achievement achievement--locked'}>
+              <div className="achievement__icon">
+                {achievement.unlocked ? (achievement.icon === 'trophy' ? <Trophy size={24} /> : <Medal size={24} />) : <LockKeyhole size={22} />}
+              </div>
+              <div>
+                <strong>{achievement.title}</strong>
+                <p>{achievement.description}</p>
+              </div>
+            </article>
+          ))}
         </div>
       </section>
 
