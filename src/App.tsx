@@ -403,15 +403,16 @@ function App() {
           <h1>1000 НЕТ</h1>
           <p className="hero__text">Каждый отказ продвигает тебя к новому уровню.</p>
         </div>
-
-        <div className="hero__progress">
-          <Sparkles className="hero__progress-icon" size={28} />
-          <span>{progressPercent}%</span>
-          <p>{state.noCount}/1000</p>
-        </div>
       </section>
 
       <section className="dashboard" aria-label="Дашборд прогресса">
+        <article className="card card--progress card--accent">
+          <div className="card__icon"><Sparkles size={20} /></div>
+          <span>Прогресс</span>
+          <strong>{progressPercent}%</strong>
+          <p>{state.noCount}/1000</p>
+        </article>
+
         <article className="card card--accent card--level">
           <div className="card__icon"><Trophy size={20} /></div>
           <span>Уровень</span>
@@ -423,7 +424,7 @@ function App() {
           <div className="card__icon"><CalendarDays size={20} /></div>
           <span>День отказов</span>
           <strong>{daysFromStart} день</strong>
-          <p>{nextLevel ? `До награды «${nextLevel.title}» осталось ${nextLevel.threshold - state.noCount}` : 'Все награды открыты.'}</p>
+          <p>{nextLevel ? `До «${nextLevel.title}» осталось ${nextLevel.threshold - state.noCount}` : 'Все награды открыты.'}</p>
         </article>
 
         <article className="card card--quote card--wide">
