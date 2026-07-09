@@ -571,13 +571,13 @@ function App() {
             </button>
 
             <div className="onboarding-progress">
-              <span style={{ width: `${((onboardingStep + 1) / 3) * 100}%` }} />
+              <span style={{ width: `${((onboardingStep + 1) / 4) * 100}%` }} />
             </div>
 
             {onboardingStep === 0 && (
               <div className="onboarding-screen">
                 <div className="onboarding-icon"><Sparkles size={34} /></div>
-                <p className="eyebrow">шаг 1 из 3</p>
+                <p className="eyebrow">шаг 1 из 4</p>
                 <h2>1000 НЕТ — это игра на смелость</h2>
                 <p>Здесь не считаются продажи, регистрации и «да». Здесь считается навык продолжать действовать после отказа.</p>
                 <button className="onboarding-next" onClick={() => setOnboardingStep(1)}>Дальше</button>
@@ -587,7 +587,7 @@ function App() {
             {onboardingStep === 1 && (
               <div className="onboarding-screen">
                 <div className="onboarding-icon"><Zap size={34} /></div>
-                <p className="eyebrow">шаг 2 из 3</p>
+                <p className="eyebrow">шаг 2 из 4</p>
                 <h2>Нажимай +1 НЕТ после каждого отказа</h2>
                 <p>Карта отказов будет заполняться, уровни открываться, а после каждого действия появится цитата, которую можно сохранить в библиотеку.</p>
                 <button className="onboarding-next" onClick={() => setOnboardingStep(2)}>Дальше</button>
@@ -597,9 +597,31 @@ function App() {
             {onboardingStep === 2 && (
               <div className="onboarding-screen">
                 <div className="onboarding-icon"><Trophy size={34} /></div>
-                <p className="eyebrow">шаг 3 из 3</p>
+                <p className="eyebrow">шаг 3 из 4</p>
                 <h2>Твоя цель — не избежать отказов, а пройти их</h2>
                 <p>Каждые 100 НЕТ теперь видны на карте. Чем больше заполнено клеток, тем спокойнее ты относишься к отказам.</p>
+                <button className="onboarding-next" onClick={() => setOnboardingStep(3)}>Дальше</button>
+              </div>
+            )}
+
+            {onboardingStep === 3 && (
+              <div className="onboarding-screen">
+                <div className="onboarding-icon"><BookOpen size={34} /></div>
+                <p className="eyebrow">шаг 4 из 4</p>
+                <h2>Поставь сервис на экран Домой</h2>
+                <p>Так 1000 НЕТ будет открываться как отдельное приложение — быстро, удобно и всегда под рукой.</p>
+
+                <div className="install-instruction-grid">
+                  <article>
+                    <strong>iPhone / Safari</strong>
+                    <p>Открой сайт в Safari → нажми кнопку «Поделиться» → выбери «На экран Домой» → нажми «Добавить».</p>
+                  </article>
+                  <article>
+                    <strong>Android / Chrome</strong>
+                    <p>Открой меню ⋮ → выбери «Установить приложение» или «Добавить на главный экран» → подтверди установку.</p>
+                  </article>
+                </div>
+
                 <button className="onboarding-next" onClick={finishOnboarding}>Начать путь</button>
               </div>
             )}
