@@ -5,6 +5,8 @@ import {
   CalendarDays,
   Check,
   Copy,
+  LockKeyhole,
+  Medal,
   Moon,
   Palette,
   RotateCcw,
@@ -13,6 +15,7 @@ import {
   Sparkles,
   Sun,
   Target,
+  Trash2,
   Trophy,
   X,
   Zap,
@@ -192,8 +195,20 @@ function getDailyQuote(quotes: Quote[]): Quote {
   return quotes[daySeed % quotes.length];
 }
 
-function getClickQuote(noCount: number, quotes: Quote[]): Quote {
-  return quotes[Math.max(0, noCount - 1) % quotes.length];
+function getRandomQuote(quotes: Quote[], avoidQuoteId?: number): Quote {
+  if (quotes.length <= 1) {
+    return quotes[0];
+  }
+
+  let quote = quotes[Math.floor(Math.random() * quotes.length)];
+  let attempts = 0;
+
+  while (quote.id === avoidQuoteId && attempts < 8) {
+    quote = quotes[Math.floor(Math.random() * quotes.length)];
+    attempts += 1;
+  }
+
+  return quote;
 }
 
 function App() {
@@ -201,6 +216,7 @@ function App() {
   const [toast, setToast] = useState<string>('');
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [modalQuote, setModalQuote] = useState<Quote | null>(null);
+  const [lastQuoteId, setLastQuoteId] = useState<number | undefined>();
   const [copied, setCopied] = useState(false);
   const [savedQuotes, setSavedQuotes] = useState<string[]>(getStoredSavedQuotes);
   const quotes = useMemo(() => createQuotes(quotesSource), []);
@@ -249,7 +265,6 @@ function App() {
   function updateNoCount(nextValue: number, options?: { showQuote?: boolean; celebrate?: boolean }) {
     const nextNoCount = clampProgress(nextValue);
     const newLevel = LEVELS.find((level) => level.threshold === nextNoCount);
-    const nextQuote = getClickQuote(nextNoCount, quotes);
 
     setState((current) => ({
       ...current,
@@ -261,12 +276,14 @@ function App() {
     }
 
     if (options?.showQuote && nextNoCount > 0) {
+      const nextQuote = getRandomQuote(quotes, lastQuoteId);
       setCopied(false);
+      setLastQuoteId(nextQuote.id);
       setModalQuote(nextQuote);
     }
 
     if (newLevel) {
-      setToast(`Новый уровень: ${newLevel.title}!`);
+      setToast(`Новая награда: ${newLevel.title}!`);
       return;
     }
 
@@ -297,13 +314,9 @@ function App() {
     setToast('Прогресс сброшен. Новый путь начинается с первого действия.');
   }
 
-  async function handleCopyQuote() {
-    if (!modalQuote) {
-      return;
-    }
-
+  async function copyText(text: string) {
     try {
-      await navigator.clipboard.writeText(modalQuote.text);
+      await navigator.clipboard.writeText(text);
       setCopied(true);
       setToast('Цитата скопирована.');
     } catch {
@@ -322,9 +335,14 @@ function App() {
         return current;
       }
 
-      setToast('Цитата сохранена.');
+      setToast('Цитата сохранена в коллекцию.');
       return [modalQuote.text, ...current];
     });
+  }
+
+  function handleRemoveSavedQuote(quote: string) {
+    setSavedQuotes((current) => current.filter((item) => item !== quote));
+    setToast('Цитата удалена из сохранённых.');
   }
 
   return (
@@ -432,8 +450,8 @@ function App() {
           <strong>{state.noCount}/1000</strong>
           <p>
             {nextLevel
-              ? `До уровня «${nextLevel.title}» осталось ${nextLevel.threshold - state.noCount}`
-              : 'Все уровни пройдены.'}
+              ? `До награды «${nextLevel.title}» осталось ${nextLevel.threshold - state.noCount}`
+              : 'Все награды открыты.'}
           </p>
         </article>
 
@@ -451,11 +469,7 @@ function App() {
         </article>
       </section>
 
-      <section className="actions" aria-label="Основные действия">
-        <button className="primary-button" onClick={handleAddNo} disabled={state.noCount >= 1000}>
-          <Zap size={24} />
-          +1 НЕТ
-        </button>
+      <section className="actions" aria-label="Дополнительные действия">
         <button className="ghost-button" onClick={handleUndo} disabled={state.noCount <= 0}>
           <RotateCcw size={18} />
           Отменить последнее
@@ -498,25 +512,84 @@ function App() {
       <section className="levels glass-card">
         <div className="section-heading">
           <div>
-            <p className="eyebrow">маршрут</p>
+            <p className="eyebrow">награды</p>
             <h2>Уровни</h2>
           </div>
+          <p>Открывай уровни через действия. Закрытые награды ждут своего момента.</p>
         </div>
 
         <div className="level-list">
           {LEVELS.map((level) => {
             const isReached = state.noCount >= level.threshold;
+            const isLegend = level.threshold === 1000;
 
             return (
-              <article key={level.threshold} className={isReached ? 'level level--reached' : 'level'}>
-                <span>{level.threshold} НЕТ</span>
-                <strong>{level.title}</strong>
-                <p>{level.description}</p>
+              <article
+                key={level.threshold}
+                className={isReached ? 'level level--reached' : 'level level--locked'}
+              >
+                <div className="level__reward">
+                  {isReached ? (isLegend ? <Trophy size={28} /> : <Medal size={28} />) : <LockKeyhole size={26} />}
+                </div>
+                <div className="level__content">
+                  <span>{level.threshold} НЕТ</span>
+                  <strong>{level.title}</strong>
+                  <p>{level.description}</p>
+                </div>
               </article>
             );
           })}
         </div>
       </section>
+
+      <section className="saved-quotes glass-card">
+        <div className="section-heading">
+          <div>
+            <p className="eyebrow">коллекция</p>
+            <h2>Сохранённые цитаты</h2>
+          </div>
+          <p>Цитаты, которые ты сохранил после отказов, появляются здесь.</p>
+        </div>
+
+        {savedQuotes.length === 0 ? (
+          <div className="empty-saved">
+            <BookmarkPlus size={30} />
+            <strong>Пока нет сохранённых цитат</strong>
+            <p>Нажми +1 НЕТ, сохрани сильную фразу — и она появится в этой коллекции.</p>
+          </div>
+        ) : (
+          <div className="saved-list">
+            {savedQuotes.map((quote, index) => (
+              <article className="saved-quote" key={`${quote}-${index}`}>
+                <p>{quote}</p>
+                <div className="saved-quote__actions">
+                  <button onClick={() => copyText(quote)} aria-label="Скопировать сохранённую цитату">
+                    <Copy size={16} />
+                  </button>
+                  <button onClick={() => handleRemoveSavedQuote(quote)} aria-label="Удалить сохранённую цитату">
+                    <Trash2 size={16} />
+                  </button>
+                </div>
+              </article>
+            ))}
+          </div>
+        )}
+      </section>
+
+      <footer className="footer glass-card">
+        <div>
+          <strong>1000 НЕТ</strong>
+          <p>Каждый отказ — это шаг к спокойствию, опыту и внутренней силе.</p>
+        </div>
+        <span>Сделано для людей действия ⚡️</span>
+      </footer>
+
+      <div className="sticky-add">
+        <button className="sticky-add__button" onClick={handleAddNo} disabled={state.noCount >= 1000}>
+          <Zap size={24} />
+          +1 НЕТ
+        </button>
+      </div>
 
       {modalQuote && (
         <div className="quote-overlay" role="dialog" aria-modal="true" aria-label="Мотивационная цитата">
@@ -533,7 +606,7 @@ function App() {
             <p className="quote-text">{modalQuote.text}</p>
 
             <div className="quote-actions">
-              <button onClick={handleCopyQuote}>
+              <button onClick={() => copyText(modalQuote.text)}>
                 {copied ? <Check size={18} /> : <Copy size={18} />}
                 {copied ? 'Скопировано' : 'Скопировать'}
               </button>
