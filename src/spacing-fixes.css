@@ -7,8 +7,39 @@
   height: 52px !important;
 }
 
+.settings-dock:has(.settings-panel)::before {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  content: "";
+  background:
+    radial-gradient(circle at 80% 8%, color-mix(in srgb, var(--accent), transparent 72%), transparent 18rem),
+    rgba(5, 6, 10, 0.42);
+  backdrop-filter: blur(12px) saturate(1.08);
+  -webkit-backdrop-filter: blur(12px) saturate(1.08);
+  animation: settingsBackdropIn 180ms ease both;
+}
+
 .settings-panel {
   top: calc(max(12px, env(safe-area-inset-top)) + 58px) !important;
+  box-shadow:
+    0 34px 110px rgba(0, 0, 0, 0.26),
+    0 1px 0 rgba(255, 255, 255, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.36) !important;
+}
+
+@keyframes settingsBackdropIn {
+  from {
+    opacity: 0;
+    backdrop-filter: blur(0);
+    -webkit-backdrop-filter: blur(0);
+  }
+
+  to {
+    opacity: 1;
+    backdrop-filter: blur(12px) saturate(1.08);
+    -webkit-backdrop-filter: blur(12px) saturate(1.08);
+  }
 }
 
 .install-instruction-grid {
@@ -50,6 +81,14 @@
   .settings-trigger {
     width: 50px !important;
     height: 50px !important;
+  }
+
+  .settings-dock:has(.settings-panel)::before {
+    background:
+      radial-gradient(circle at 80% 6%, color-mix(in srgb, var(--accent), transparent 74%), transparent 15rem),
+      rgba(5, 6, 10, 0.46);
+    backdrop-filter: blur(10px) saturate(1.08);
+    -webkit-backdrop-filter: blur(10px) saturate(1.08);
   }
 
   .settings-panel {
