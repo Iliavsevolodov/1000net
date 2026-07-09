@@ -12,8 +12,50 @@
   margin-left: auto;
 }
 
+.hero {
+  grid-template-columns: 1fr !important;
+}
+
+.dashboard {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 10px !important;
+}
+
+.card--progress,
+.card--level,
+.card--day {
+  min-height: 128px !important;
+  padding: 14px !important;
+  border-radius: 24px !important;
+}
+
+.card--progress strong,
+.card--level strong,
+.card--day strong {
+  font-size: clamp(24px, 3vw, 38px) !important;
+  line-height: 0.98 !important;
+  letter-spacing: -0.055em;
+}
+
+.card--progress p,
+.card--level p,
+.card--day p {
+  font-size: 13px !important;
+  line-height: 1.28 !important;
+}
+
+.card--progress .card__icon,
+.card--level .card__icon,
+.card--day .card__icon {
+  width: 36px !important;
+  height: 36px !important;
+  margin-bottom: 10px !important;
+}
+
 .card--quote {
   min-height: 170px;
+  grid-column: 1 / -1;
   border-color: color-mix(in srgb, var(--accent), white 28%);
   background:
     radial-gradient(circle at 18% 0%, color-mix(in srgb, var(--accent), transparent 38%), transparent 13rem),
@@ -284,6 +326,10 @@
 }
 
 @media (max-width: 1080px) {
+  .dashboard {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+
   .library-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -294,6 +340,72 @@
 }
 
 @media (max-width: 640px) {
+  .dashboard {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 7px !important;
+  }
+
+  .card--progress,
+  .card--level,
+  .card--day {
+    min-height: 112px !important;
+    padding: 10px !important;
+    border-radius: 20px !important;
+  }
+
+  .card--progress .card__icon,
+  .card--level .card__icon,
+  .card--day .card__icon {
+    width: 30px !important;
+    height: 30px !important;
+    margin-bottom: 8px !important;
+    border-radius: 12px !important;
+  }
+
+  .card--progress .card__icon svg,
+  .card--level .card__icon svg,
+  .card--day .card__icon svg {
+    width: 17px;
+    height: 17px;
+  }
+
+  .card--progress span,
+  .card--level span,
+  .card--day span {
+    margin-bottom: 6px !important;
+    font-size: 9px !important;
+    letter-spacing: 0.08em !important;
+  }
+
+  .card--progress strong,
+  .card--level strong,
+  .card--day strong {
+    font-size: clamp(20px, 6vw, 27px) !important;
+    line-height: 0.95 !important;
+    letter-spacing: -0.06em !important;
+  }
+
+  .card--level strong {
+    font-size: clamp(17px, 4.9vw, 23px) !important;
+  }
+
+  .card--progress p,
+  .card--level p,
+  .card--day p {
+    margin-top: 6px !important;
+    font-size: 10px !important;
+    line-height: 1.15 !important;
+  }
+
+  .card--quote {
+    min-height: 150px !important;
+    grid-column: 1 / -1 !important;
+  }
+
+  .card--quote strong {
+    font-size: clamp(22px, 7vw, 32px) !important;
+  }
+
   .quote-library-entry {
     flex-direction: column;
     align-items: stretch;
