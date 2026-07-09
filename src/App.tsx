@@ -1,9 +1,14 @@
-import { useEffect, useState, type CSSProperties } from 'react';
-import quotes from './data/quotes.json';
+import { useEffect, useMemo, useState, type CSSProperties } from 'react';
+import quoteParts from './data/quotes.json';
 
 type Quote = {
   id: number;
   text: string;
+};
+
+type QuoteParts = {
+  starters: string[];
+  endings: string[];
 };
 
 type Theme = {
@@ -80,7 +85,22 @@ const THEMES: Theme[] = [
   { id: 'mint-fresh', title: 'Мятная свежесть', color: '#2DD4BF' },
 ];
 
-const typedQuotes = quotes as Quote[];
+const quotesSource = quoteParts as QuoteParts;
+
+function createQuotes(source: QuoteParts): Quote[] {
+  const result: Quote[] = [];
+
+  source.starters.forEach((starter) => {
+    source.endings.forEach((ending) => {
+      result.push({
+        id: result.length + 1,
+        text: `${starter} — ${ending}`,
+      });
+    });
+  });
+
+  return result.slice(0, 1000);
+}
 
 function getTodayIso(): string {
   return new Date().toISOString().slice(0, 10);
@@ -138,25 +158,26 @@ function getNextLevel(noCount: number): Level | null {
   return LEVELS.find((level) => noCount < level.threshold) ?? null;
 }
 
-function getDailyQuote(): Quote {
+function getDailyQuote(quotes: Quote[]): Quote {
   const daySeed = Number(getTodayIso().split('-').join(''));
-  return typedQuotes[daySeed % typedQuotes.length];
+  return quotes[daySeed % quotes.length];
 }
 
-function getClickQuote(noCount: number): Quote {
-  return typedQuotes[Math.max(0, noCount - 1) % typedQuotes.length];
+function getClickQuote(noCount: number, quotes: Quote[]): Quote {
+  return quotes[Math.max(0, noCount - 1) % quotes.length];
 }
 
 function App() {
   const [state, setState] = useState<ProgressState>(getStoredState);
   const [toast, setToast] = useState<string>('');
+  const quotes = useMemo(() => createQuotes(quotesSource), []);
 
   const theme = THEMES.find((item) => item.id === state.themeId) ?? THEMES[0];
   const currentLevel = getCurrentLevel(state.noCount);
   const nextLevel = getNextLevel(state.noCount);
   const daysFromStart = getDaysFromStart(state.startDate);
   const progressPercent = Math.round((state.noCount / 1000) * 100);
-  const dailyQuote = getDailyQuote();
+  const dailyQuote = getDailyQuote(quotes);
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
@@ -191,7 +212,7 @@ function App() {
       return;
     }
 
-    setToast(getClickQuote(nextNoCount).text);
+    setToast(getClickQuote(nextNoCount, quotes).text);
   }
 
   function handleAddNo() {
