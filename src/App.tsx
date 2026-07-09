@@ -54,6 +54,7 @@ type Level = {
 
 const STORAGE_KEY = 'one-thousand-no-progress';
 const SAVED_QUOTES_KEY = 'one-thousand-no-saved-quotes';
+const ONBOARDING_KEY = 'one-thousand-no-onboarding-complete';
 
 const LEVELS: Level[] = [
   { threshold: 10, title: 'Первые шаги', description: 'Ты начал путь и сделал первые действия.' },
@@ -139,6 +140,10 @@ function getStoredSavedQuotes(): string[] {
   }
 }
 
+function getStoredOnboardingComplete(): boolean {
+  return safeRead(ONBOARDING_KEY) === 'true';
+}
+
 function clampProgress(value: number): number {
   return Math.min(1000, Math.max(0, value));
 }
@@ -197,6 +202,8 @@ function App() {
   const [copied, setCopied] = useState(false);
   const [savedQuotes, setSavedQuotes] = useState<string[]>(getStoredSavedQuotes);
   const [quoteLibraryOpen, setQuoteLibraryOpen] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(() => !getStoredOnboardingComplete());
+  const [onboardingStep, setOnboardingStep] = useState(0);
   const quotes = useMemo(() => createQuotes(quotesSource), []);
 
   const theme = THEMES.find((item) => item.id === state.themeId) ?? THEMES[0];
@@ -221,14 +228,14 @@ function App() {
   }, [toast]);
 
   useEffect(() => {
-    const shouldLock = settingsOpen || Boolean(modalQuote) || quoteLibraryOpen;
+    const shouldLock = settingsOpen || Boolean(modalQuote) || quoteLibraryOpen || showOnboarding;
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = shouldLock ? 'hidden' : previousOverflow;
 
     return () => {
       document.body.style.overflow = previousOverflow;
     };
-  }, [settingsOpen, modalQuote, quoteLibraryOpen]);
+  }, [settingsOpen, modalQuote, quoteLibraryOpen, showOnboarding]);
 
   function launchConfetti() {
     const defaults = {
@@ -317,6 +324,12 @@ function App() {
     setToast('Цитата удалена из библиотеки.');
   }
 
+  function finishOnboarding() {
+    safeWrite(ONBOARDING_KEY, 'true');
+    setShowOnboarding(false);
+    setOnboardingStep(0);
+  }
+
   return (
     <main
       className={state.darkMode ? 'app app--dark' : 'app'}
@@ -380,6 +393,24 @@ function App() {
                 aria-label="Переключить светлую и тёмную тему"
               >
                 <span>{state.darkMode ? <Moon size={18} /> : <Sun size={18} />}</span>
+              </button>
+            </div>
+
+            <div className="settings-group install-settings">
+              <div className="settings-label">
+                <BookOpen size={18} />
+                <span>Онбординг</span>
+              </div>
+              <button
+                className="premium-mini-button"
+                onClick={() => {
+                  setShowOnboarding(true);
+                  setOnboardingStep(0);
+                  setSettingsOpen(false);
+                }}
+              >
+                <BookOpen size={17} />
+                Показать инструкцию
               </button>
             </div>
 
@@ -531,6 +562,50 @@ function App() {
           </button>
         </div>
       </div>
+
+      {showOnboarding && (
+        <div className="onboarding-overlay" role="dialog" aria-modal="true" aria-label="Онбординг 1000 НЕТ">
+          <div className="onboarding-card">
+            <button className="onboarding-close" onClick={finishOnboarding} aria-label="Закрыть онбординг">
+              <X size={22} />
+            </button>
+
+            <div className="onboarding-progress">
+              <span style={{ width: `${((onboardingStep + 1) / 3) * 100}%` }} />
+            </div>
+
+            {onboardingStep === 0 && (
+              <div className="onboarding-screen">
+                <div className="onboarding-icon"><Sparkles size={34} /></div>
+                <p className="eyebrow">шаг 1 из 3</p>
+                <h2>1000 НЕТ — это игра на смелость</h2>
+                <p>Здесь не считаются продажи, регистрации и «да». Здесь считается навык продолжать действовать после отказа.</p>
+                <button className="onboarding-next" onClick={() => setOnboardingStep(1)}>Дальше</button>
+              </div>
+            )}
+
+            {onboardingStep === 1 && (
+              <div className="onboarding-screen">
+                <div className="onboarding-icon"><Zap size={34} /></div>
+                <p className="eyebrow">шаг 2 из 3</p>
+                <h2>Нажимай +1 НЕТ после каждого отказа</h2>
+                <p>Карта отказов будет заполняться, уровни открываться, а после каждого действия появится цитата, которую можно сохранить в библиотеку.</p>
+                <button className="onboarding-next" onClick={() => setOnboardingStep(2)}>Дальше</button>
+              </div>
+            )}
+
+            {onboardingStep === 2 && (
+              <div className="onboarding-screen">
+                <div className="onboarding-icon"><Trophy size={34} /></div>
+                <p className="eyebrow">шаг 3 из 3</p>
+                <h2>Твоя цель — не избежать отказов, а пройти их</h2>
+                <p>Каждые 100 НЕТ теперь видны на карте. Чем больше заполнено клеток, тем спокойнее ты относишься к отказам.</p>
+                <button className="onboarding-next" onClick={finishOnboarding}>Начать путь</button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {quoteLibraryOpen && (
         <div className="library-overlay" role="dialog" aria-modal="true" aria-label="Библиотека цитат">
