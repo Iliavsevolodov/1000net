@@ -7,8 +7,8 @@
   "dependencies": {
     "@vitejs/plugin-react": "^5.0.0",
     "canvas-confetti": "^1.9.3",
-    "firebase": "^11.10.0",
     "lucide-react": "^0.468.0",
+    "pocketbase": "^0.26.2",
     "vite": "^7.0.0",
     "typescript": "^5.8.0",
     "react": "^19.1.0",
