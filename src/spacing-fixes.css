@@ -1,0 +1,27 @@
+.hero {
+  margin-top: 10px !important;
+}
+
+.settings-trigger {
+  width: 52px !important;
+  height: 52px !important;
+}
+
+.settings-panel {
+  top: calc(max(12px, env(safe-area-inset-top)) + 58px) !important;
+}
+
+@media (max-width: 640px) {
+  .hero {
+    margin-top: 8px !important;
+  }
+
+  .settings-trigger {
+    width: 50px !important;
+    height: 50px !important;
+  }
+
+  .settings-panel {
+    top: calc(max(10px, env(safe-area-inset-top)) + 56px) !important;
+  }
+}
