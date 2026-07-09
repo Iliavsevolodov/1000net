@@ -1,12 +1,14 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
+import CloudSync from './CloudSync';
 import './styles.css';
 import './library.css';
 import './spacing-fixes.css';
 import './animations.css';
 import './library-modal-fixes.css';
 import './progress-features.css';
+import './cloud-sync.css';
 
 async function removeOldPwaCache() {
   try {
@@ -33,5 +35,6 @@ void removeOldPwaCache();
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <App />
+    <CloudSync />
   </React.StrictMode>,
 );
