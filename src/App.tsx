@@ -170,6 +170,7 @@ function getClickQuote(noCount: number, quotes: Quote[]): Quote {
 function App() {
   const [state, setState] = useState<ProgressState>(getStoredState);
   const [toast, setToast] = useState<string>('');
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const quotes = useMemo(() => createQuotes(quotesSource), []);
 
   const theme = THEMES.find((item) => item.id === state.themeId) ?? THEMES[0];
@@ -223,10 +224,6 @@ function App() {
     updateNoCount(state.noCount - 1);
   }
 
-  function handleCellClick(index: number) {
-    updateNoCount(index + 1);
-  }
-
   function handleReset() {
     const confirmed = window.confirm('Сбросить весь прогресс и начать заново?');
     if (!confirmed) {
@@ -246,6 +243,62 @@ function App() {
       className={state.darkMode ? 'app app--dark' : 'app'}
       style={{ '--accent': theme.color } as CSSProperties}
     >
+      <section className="topbar" aria-label="Верхняя панель">
+        <div className="topbar__brand">
+          <span>1000 НЕТ</span>
+          <p>Сервис отказоустойчивости</p>
+        </div>
+
+        <button
+          className="settings-trigger"
+          onClick={() => setSettingsOpen((current) => !current)}
+          aria-expanded={settingsOpen}
+          aria-label="Открыть настройки оформления"
+        >
+          ⚙️
+        </button>
+
+        {settingsOpen && (
+          <div className="settings-panel">
+            <div className="settings-panel__header">
+              <div>
+                <p className="eyebrow">оформление</p>
+                <h2>Настройки</h2>
+              </div>
+              <button className="panel-close" onClick={() => setSettingsOpen(false)} aria-label="Закрыть настройки">
+                ×
+              </button>
+            </div>
+
+            <div className="mode-row">
+              <div>
+                <strong>{state.darkMode ? 'Тёмная версия' : 'Светлая версия'}</strong>
+                <p>Переключи общий режим интерфейса.</p>
+              </div>
+              <button
+                className="mode-toggle"
+                onClick={() => setState((current) => ({ ...current, darkMode: !current.darkMode }))}
+              >
+                {state.darkMode ? 'Светлая' : 'Тёмная'}
+              </button>
+            </div>
+
+            <div className="theme-list">
+              {THEMES.map((item) => (
+                <button
+                  key={item.id}
+                  className={item.id === state.themeId ? 'theme-chip theme-chip--active' : 'theme-chip'}
+                  onClick={() => setState((current) => ({ ...current, themeId: item.id }))}
+                >
+                  <span style={{ backgroundColor: item.color }} />
+                  {item.title}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+      </section>
+
       <section className="hero">
         <div>
           <p className="eyebrow">трекер отказов для сетевиков</p>
@@ -309,7 +362,7 @@ function App() {
             <p className="eyebrow">1000 ячеек</p>
             <h2>Карта отказов</h2>
           </div>
-          <p>40 колонок × 25 рядов. Нажми на любую ячейку, чтобы быстро выставить прогресс.</p>
+          <p>40 колонок × 25 рядов. Ячейки заполняются только через кнопку +1 НЕТ.</p>
         </div>
 
         <div className="no-grid" aria-label="Таблица из 1000 отказов">
@@ -318,47 +371,17 @@ function App() {
             const isCurrent = index === state.noCount - 1;
 
             return (
-              <button
+              <div
                 key={index}
                 className={[
                   'no-cell',
                   isFilled ? 'no-cell--filled' : '',
                   isCurrent ? 'no-cell--current' : '',
                 ].join(' ')}
-                onClick={() => handleCellClick(index)}
                 title={`${index + 1} НЕТ`}
-                aria-label={`${index + 1} НЕТ`}
               />
             );
           })}
-        </div>
-      </section>
-
-      <section className="settings">
-        <div className="section-heading">
-          <div>
-            <p className="eyebrow">оформление</p>
-            <h2>Цветовая тема</h2>
-          </div>
-          <button
-            className="mode-toggle"
-            onClick={() => setState((current) => ({ ...current, darkMode: !current.darkMode }))}
-          >
-            {state.darkMode ? 'Светлая версия' : 'Тёмная версия'}
-          </button>
-        </div>
-
-        <div className="theme-list">
-          {THEMES.map((item) => (
-            <button
-              key={item.id}
-              className={item.id === state.themeId ? 'theme-chip theme-chip--active' : 'theme-chip'}
-              onClick={() => setState((current) => ({ ...current, themeId: item.id }))}
-            >
-              <span style={{ backgroundColor: item.color }} />
-              {item.title}
-            </button>
-          ))}
         </div>
       </section>
 
