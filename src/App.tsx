@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState, type CSSProperties } from 'react';
 import confetti from 'canvas-confetti';
 import {
   BookmarkPlus,
+  BookOpen,
   CalendarDays,
   Check,
   Copy,
@@ -55,41 +56,13 @@ const STORAGE_KEY = 'one-thousand-no-progress';
 const SAVED_QUOTES_KEY = 'one-thousand-no-saved-quotes';
 
 const LEVELS: Level[] = [
-  {
-    threshold: 10,
-    title: 'Первые шаги',
-    description: 'Ты начал путь и сделал первые действия.',
-  },
-  {
-    threshold: 50,
-    title: 'Уже не страшно',
-    description: 'Отказы больше не выглядят как катастрофа.',
-  },
-  {
-    threshold: 100,
-    title: 'Вышел из ступора',
-    description: 'Ты перестал откладывать и начал действовать стабильно.',
-  },
-  {
-    threshold: 250,
-    title: 'Стабильный игрок',
-    description: 'Ты уже не ждёшь настроения, ты работаешь по системе.',
-  },
-  {
-    threshold: 500,
-    title: 'Железная психика',
-    description: 'Отказы больше не сбивают тебя с маршрута.',
-  },
-  {
-    threshold: 750,
-    title: 'Машина действий',
-    description: 'Ты стал человеком темпа и дисциплины.',
-  },
-  {
-    threshold: 1000,
-    title: 'Легенда отказов',
-    description: 'Ты прошёл путь, который большинство даже не начинает.',
-  },
+  { threshold: 10, title: 'Первые шаги', description: 'Ты начал путь и сделал первые действия.' },
+  { threshold: 50, title: 'Уже не страшно', description: 'Отказы больше не выглядят как катастрофа.' },
+  { threshold: 100, title: 'Вышел из ступора', description: 'Ты перестал откладывать и начал действовать стабильно.' },
+  { threshold: 250, title: 'Стабильный игрок', description: 'Ты уже не ждёшь настроения, ты работаешь по системе.' },
+  { threshold: 500, title: 'Железная психика', description: 'Отказы больше не сбивают тебя с маршрута.' },
+  { threshold: 750, title: 'Машина действий', description: 'Ты стал человеком темпа и дисциплины.' },
+  { threshold: 1000, title: 'Легенда отказов', description: 'Ты прошёл путь, который большинство даже не начинает.' },
 ];
 
 const THEMES: Theme[] = [
@@ -109,15 +82,28 @@ const THEMES: Theme[] = [
 
 const quotesSource = quoteParts as QuoteParts;
 
+function safeRead(key: string): string | null {
+  try {
+    return window.localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+function safeWrite(key: string, value: string) {
+  try {
+    window.localStorage.setItem(key, value);
+  } catch {
+    // Приложение работает даже если браузер временно заблокировал storage.
+  }
+}
+
 function createQuotes(source: QuoteParts): Quote[] {
   const result: Quote[] = [];
 
   source.starters.forEach((starter) => {
     source.endings.forEach((ending) => {
-      result.push({
-        id: result.length + 1,
-        text: `${starter} — ${ending}`,
-      });
+      result.push({ id: result.length + 1, text: `${starter} — ${ending}` });
     });
   });
 
@@ -137,15 +123,8 @@ function getStoredState(): ProgressState {
   };
 
   try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (!stored) {
-      return fallback;
-    }
-
-    return {
-      ...fallback,
-      ...JSON.parse(stored),
-    };
+    const stored = safeRead(STORAGE_KEY);
+    return stored ? { ...fallback, ...JSON.parse(stored) } : fallback;
   } catch {
     return fallback;
   }
@@ -153,7 +132,7 @@ function getStoredState(): ProgressState {
 
 function getStoredSavedQuotes(): string[] {
   try {
-    const stored = localStorage.getItem(SAVED_QUOTES_KEY);
+    const stored = safeRead(SAVED_QUOTES_KEY);
     return stored ? JSON.parse(stored) : [];
   } catch {
     return [];
@@ -168,13 +147,12 @@ function getDaysFromStart(startDate: string): number {
   const start = new Date(`${startDate}T00:00:00`);
   const today = new Date(`${getTodayIso()}T00:00:00`);
   const diff = today.getTime() - start.getTime();
-
   return Math.max(1, Math.floor(diff / 86_400_000) + 1);
 }
 
 function getCurrentLevel(noCount: number): Level {
   const reachedLevels = LEVELS.filter((level) => noCount >= level.threshold);
-  const reached = reachedLevels[reachedLevels.length - 1];
+  const reached = reachedLevels.length > 0 ? reachedLevels[reachedLevels.length - 1] : null;
 
   return (
     reached ?? {
@@ -191,12 +169,12 @@ function getNextLevel(noCount: number): Level | null {
 
 function getDailyQuote(quotes: Quote[]): Quote {
   const daySeed = Number(getTodayIso().split('-').join(''));
-  return quotes[daySeed % quotes.length];
+  return quotes[daySeed % quotes.length] ?? { id: 0, text: 'Каждый отказ продвигает тебя к новому уровню.' };
 }
 
 function getRandomQuote(quotes: Quote[], avoidQuoteId?: number): Quote {
   if (quotes.length <= 1) {
-    return quotes[0];
+    return quotes[0] ?? { id: 0, text: 'Продолжай движение.' };
   }
 
   let quote = quotes[Math.floor(Math.random() * quotes.length)];
@@ -218,6 +196,7 @@ function App() {
   const [lastQuoteId, setLastQuoteId] = useState<number | undefined>();
   const [copied, setCopied] = useState(false);
   const [savedQuotes, setSavedQuotes] = useState<string[]>(getStoredSavedQuotes);
+  const [quoteLibraryOpen, setQuoteLibraryOpen] = useState(false);
   const quotes = useMemo(() => createQuotes(quotesSource), []);
 
   const theme = THEMES.find((item) => item.id === state.themeId) ?? THEMES[0];
@@ -228,22 +207,28 @@ function App() {
   const dailyQuote = getDailyQuote(quotes);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    safeWrite(STORAGE_KEY, JSON.stringify(state));
   }, [state]);
 
   useEffect(() => {
-    localStorage.setItem(SAVED_QUOTES_KEY, JSON.stringify(savedQuotes));
+    safeWrite(SAVED_QUOTES_KEY, JSON.stringify(savedQuotes));
   }, [savedQuotes]);
 
   useEffect(() => {
-    if (!toast) {
-      return;
-    }
-
+    if (!toast) return;
     const timeoutId = window.setTimeout(() => setToast(''), 2400);
-
     return () => window.clearTimeout(timeoutId);
   }, [toast]);
+
+  useEffect(() => {
+    const shouldLock = settingsOpen || Boolean(modalQuote) || quoteLibraryOpen;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = shouldLock ? 'hidden' : previousOverflow;
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [settingsOpen, modalQuote, quoteLibraryOpen]);
 
   function launchConfetti() {
     const defaults = {
@@ -265,14 +250,9 @@ function App() {
     const nextNoCount = clampProgress(nextValue);
     const newLevel = LEVELS.find((level) => level.threshold === nextNoCount);
 
-    setState((current) => ({
-      ...current,
-      noCount: nextNoCount,
-    }));
+    setState((current) => ({ ...current, noCount: nextNoCount }));
 
-    if (options?.celebrate && nextNoCount > 0) {
-      launchConfetti();
-    }
+    if (options?.celebrate && nextNoCount > 0) launchConfetti();
 
     if (options?.showQuote && nextNoCount > 0) {
       const nextQuote = getRandomQuote(quotes, lastQuoteId);
@@ -301,15 +281,9 @@ function App() {
 
   function handleReset() {
     const confirmed = window.confirm('Сбросить весь прогресс и начать заново?');
-    if (!confirmed) {
-      return;
-    }
+    if (!confirmed) return;
 
-    setState((current) => ({
-      ...current,
-      noCount: 0,
-      startDate: getTodayIso(),
-    }));
+    setState((current) => ({ ...current, noCount: 0, startDate: getTodayIso() }));
     setSettingsOpen(false);
     setToast('Прогресс сброшен. Новый путь начинается с первого действия.');
   }
@@ -325,9 +299,7 @@ function App() {
   }
 
   function handleSaveQuote() {
-    if (!modalQuote) {
-      return;
-    }
+    if (!modalQuote) return;
 
     setSavedQuotes((current) => {
       if (current.includes(modalQuote.text)) {
@@ -335,14 +307,14 @@ function App() {
         return current;
       }
 
-      setToast('Цитата сохранена в коллекцию.');
+      setToast('Цитата сохранена в библиотеку.');
       return [modalQuote.text, ...current];
     });
   }
 
   function handleRemoveSavedQuote(quote: string) {
     setSavedQuotes((current) => current.filter((item) => item !== quote));
-    setToast('Цитата удалена из сохранённых.');
+    setToast('Цитата удалена из библиотеки.');
   }
 
   return (
@@ -451,11 +423,7 @@ function App() {
           <div className="card__icon"><CalendarDays size={20} /></div>
           <span>День отказов</span>
           <strong>{daysFromStart} день</strong>
-          <p>
-            {nextLevel
-              ? `До награды «${nextLevel.title}» осталось ${nextLevel.threshold - state.noCount}`
-              : 'Все награды открыты.'}
-          </p>
+          <p>{nextLevel ? `До награды «${nextLevel.title}» осталось ${nextLevel.threshold - state.noCount}` : 'Все награды открыты.'}</p>
         </article>
 
         <article className="card card--quote card--wide">
@@ -463,6 +431,18 @@ function App() {
           <span>Фраза дня</span>
           <strong>{dailyQuote.text}</strong>
         </article>
+      </section>
+
+      <section className="quote-library-entry glass-card">
+        <div>
+          <p className="eyebrow">библиотека</p>
+          <h2>Цитаты</h2>
+          <p>{savedQuotes.length > 0 ? `Сохранено сильных фраз: ${savedQuotes.length}` : 'Сохраняй лучшие цитаты после каждого НЕТ.'}</p>
+        </div>
+        <button className="library-open-button" onClick={() => setQuoteLibraryOpen(true)}>
+          <BookOpen size={21} />
+          Открыть библиотеку
+        </button>
       </section>
 
       <section className="grid-section glass-card">
@@ -477,18 +457,7 @@ function App() {
           {Array.from({ length: 1000 }, (_, index) => {
             const isFilled = index < state.noCount;
             const isCurrent = index === state.noCount - 1;
-
-            return (
-              <div
-                key={index}
-                className={[
-                  'no-cell',
-                  isFilled ? 'no-cell--filled' : '',
-                  isCurrent ? 'no-cell--current' : '',
-                ].join(' ')}
-                title={`${index + 1} НЕТ`}
-              />
-            );
+            return <div key={index} className={['no-cell', isFilled ? 'no-cell--filled' : '', isCurrent ? 'no-cell--current' : ''].join(' ')} title={`${index + 1} НЕТ`} />;
           })}
         </div>
       </section>
@@ -506,12 +475,8 @@ function App() {
           {LEVELS.map((level) => {
             const isReached = state.noCount >= level.threshold;
             const isLegend = level.threshold === 1000;
-
             return (
-              <article
-                key={level.threshold}
-                className={isReached ? 'level level--reached' : 'level level--locked'}
-              >
+              <article key={level.threshold} className={isReached ? 'level level--reached' : 'level level--locked'}>
                 <div className="level__reward">
                   {isReached ? (isLegend ? <Trophy size={28} /> : <Medal size={28} />) : <LockKeyhole size={26} />}
                 </div>
@@ -526,40 +491,6 @@ function App() {
         </div>
       </section>
 
-      <section className="saved-quotes glass-card">
-        <div className="section-heading">
-          <div>
-            <p className="eyebrow">коллекция</p>
-            <h2>Сохранённые цитаты</h2>
-          </div>
-          <p>Цитаты, которые ты сохранил после отказов, появляются здесь.</p>
-        </div>
-
-        {savedQuotes.length === 0 ? (
-          <div className="empty-saved">
-            <BookmarkPlus size={30} />
-            <strong>Пока нет сохранённых цитат</strong>
-            <p>Нажми +1 НЕТ, сохрани сильную фразу — и она появится в этой коллекции.</p>
-          </div>
-        ) : (
-          <div className="saved-list">
-            {savedQuotes.map((quote, index) => (
-              <article className="saved-quote" key={`${quote}-${index}`}>
-                <p>{quote}</p>
-                <div className="saved-quote__actions">
-                  <button onClick={() => copyText(quote)} aria-label="Скопировать сохранённую цитату">
-                    <Copy size={16} />
-                  </button>
-                  <button onClick={() => handleRemoveSavedQuote(quote)} aria-label="Удалить сохранённую цитату">
-                    <Trash2 size={16} />
-                  </button>
-                </div>
-              </article>
-            ))}
-          </div>
-        )}
-      </section>
-
       <footer className="footer glass-card">
         <div>
           <strong>1000 НЕТ</strong>
@@ -570,12 +501,7 @@ function App() {
 
       <div className="sticky-add">
         <div className="sticky-add__inner">
-          <button
-            className="sticky-add__undo"
-            onClick={handleUndo}
-            disabled={state.noCount <= 0}
-            aria-label="Отменить последнее действие"
-          >
+          <button className="sticky-add__undo" onClick={handleUndo} disabled={state.noCount <= 0} aria-label="Отменить последнее действие">
             <RotateCcw size={24} />
           </button>
           <button className="sticky-add__button" onClick={handleAddNo} disabled={state.noCount >= 1000}>
@@ -584,6 +510,50 @@ function App() {
           </button>
         </div>
       </div>
+
+      {quoteLibraryOpen && (
+        <div className="library-overlay" role="dialog" aria-modal="true" aria-label="Библиотека цитат">
+          <div className="library-shell">
+            <div className="library-header">
+              <div>
+                <p className="eyebrow">твоя коллекция</p>
+                <h2>Библиотека цитат</h2>
+                <p>{savedQuotes.length > 0 ? `${savedQuotes.length} сохранённых фраз для внутренней опоры.` : 'Сохраняй цитаты после клика +1 НЕТ — они появятся здесь.'}</p>
+              </div>
+              <button className="library-close" onClick={() => setQuoteLibraryOpen(false)} aria-label="Закрыть библиотеку">
+                <X size={24} />
+              </button>
+            </div>
+
+            {savedQuotes.length === 0 ? (
+              <div className="library-empty">
+                <BookmarkPlus size={44} />
+                <strong>Библиотека пока пустая</strong>
+                <p>Нажми +1 НЕТ, выбери сильную цитату и сохрани её. Здесь будет твоя личная подборка фраз.</p>
+              </div>
+            ) : (
+              <div className="library-grid">
+                {savedQuotes.map((quote, index) => (
+                  <article className="library-card" key={`${quote}-${index}`}>
+                    <span>цитата #{savedQuotes.length - index}</span>
+                    <p>{quote}</p>
+                    <div className="library-card__actions">
+                      <button onClick={() => copyText(quote)}>
+                        <Copy size={17} />
+                        Копировать
+                      </button>
+                      <button onClick={() => handleRemoveSavedQuote(quote)}>
+                        <Trash2 size={17} />
+                        Удалить
+                      </button>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {modalQuote && (
         <div className="quote-overlay" role="dialog" aria-modal="true" aria-label="Мотивационная цитата">
