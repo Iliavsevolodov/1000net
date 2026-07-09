@@ -14,7 +14,6 @@ import {
   Settings,
   Sparkles,
   Sun,
-  Target,
   Trash2,
   Trophy,
   X,
@@ -354,12 +353,7 @@ function App() {
       <div className="ambient ambient--two" />
       <div className="ambient ambient--three" />
 
-      <section className="topbar" aria-label="Верхняя панель">
-        <div className="topbar__brand">
-          <span>1000 НЕТ</span>
-          <p>Сервис отказоустойчивости</p>
-        </div>
-
+      <div className="settings-dock" aria-label="Панель настроек">
         <button
           className="settings-trigger"
           onClick={() => setSettingsOpen((current) => !current)}
@@ -417,16 +411,13 @@ function App() {
             </div>
           </div>
         )}
-      </section>
+      </div>
 
       <section className="hero glass-card glass-card--hero">
         <div>
           <p className="eyebrow">трекер отказов для сетевиков</p>
           <h1>1000 НЕТ</h1>
-          <p className="hero__text">
-            Каждый отказ закрашивает ячейку и продвигает тебя к новому уровню.
-            Не считаем «да». Считаем смелость продолжать.
-          </p>
+          <p className="hero__text">Каждый отказ продвигает тебя к новому уровню.</p>
         </div>
 
         <div className="hero__progress">
@@ -437,17 +428,17 @@ function App() {
       </section>
 
       <section className="dashboard" aria-label="Дашборд прогресса">
-        <article className="card card--accent">
+        <article className="card card--accent card--level">
           <div className="card__icon"><Trophy size={20} /></div>
           <span>Уровень</span>
           <strong>{currentLevel.title}</strong>
           <p>{currentLevel.description}</p>
         </article>
 
-        <article className="card">
-          <div className="card__icon"><Target size={20} /></div>
-          <span>Сколько НЕТ</span>
-          <strong>{state.noCount}/1000</strong>
+        <article className="card card--day">
+          <div className="card__icon"><CalendarDays size={20} /></div>
+          <span>День отказов</span>
+          <strong>{daysFromStart} день</strong>
           <p>
             {nextLevel
               ? `До награды «${nextLevel.title}» осталось ${nextLevel.threshold - state.noCount}`
@@ -455,14 +446,7 @@ function App() {
           </p>
         </article>
 
-        <article className="card">
-          <div className="card__icon"><CalendarDays size={20} /></div>
-          <span>День отказов</span>
-          <strong>{daysFromStart} день</strong>
-          <p>Путь начался {new Date(state.startDate).toLocaleDateString('ru-RU')}.</p>
-        </article>
-
-        <article className="card card--quote">
+        <article className="card card--quote card--wide">
           <div className="card__icon"><Zap size={20} /></div>
           <span>Фраза дня</span>
           <strong>{dailyQuote.text}</strong>
