@@ -310,6 +310,7 @@ function App() {
       noCount: 0,
       startDate: getTodayIso(),
     }));
+    setSettingsOpen(false);
     setToast('Прогресс сброшен. Новый путь начинается с первого действия.');
   }
 
@@ -409,6 +410,17 @@ function App() {
                 <span>{state.darkMode ? <Moon size={18} /> : <Sun size={18} />}</span>
               </button>
             </div>
+
+            <div className="settings-group settings-danger">
+              <div className="settings-label">
+                <Trash2 size={18} />
+                <span>Сброс прогресса</span>
+              </div>
+              <button className="danger-settings-button" onClick={handleReset}>
+                <Trash2 size={18} />
+                Сбросить всё и начать заново
+              </button>
+            </div>
           </div>
         )}
       </div>
@@ -451,17 +463,6 @@ function App() {
           <span>Фраза дня</span>
           <strong>{dailyQuote.text}</strong>
         </article>
-      </section>
-
-      <section className="actions" aria-label="Дополнительные действия">
-        <button className="ghost-button" onClick={handleUndo} disabled={state.noCount <= 0}>
-          <RotateCcw size={18} />
-          Отменить последнее
-        </button>
-        <button className="ghost-button" onClick={handleReset}>
-          <X size={18} />
-          Сбросить
-        </button>
       </section>
 
       <section className="grid-section glass-card">
@@ -569,10 +570,20 @@ function App() {
       </footer>
 
       <div className="sticky-add">
-        <button className="sticky-add__button" onClick={handleAddNo} disabled={state.noCount >= 1000}>
-          <Zap size={24} />
-          +1 НЕТ
-        </button>
+        <div className="sticky-add__inner">
+          <button
+            className="sticky-add__undo"
+            onClick={handleUndo}
+            disabled={state.noCount <= 0}
+            aria-label="Отменить последнее действие"
+          >
+            <RotateCcw size={24} />
+          </button>
+          <button className="sticky-add__button" onClick={handleAddNo} disabled={state.noCount >= 1000}>
+            <Zap size={24} />
+            +1 НЕТ
+          </button>
+        </div>
       </div>
 
       {modalQuote && (
