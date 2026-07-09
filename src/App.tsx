@@ -434,18 +434,6 @@ function App() {
         </article>
       </section>
 
-      <section className="quote-library-entry glass-card">
-        <div>
-          <p className="eyebrow">библиотека</p>
-          <h2>Цитаты</h2>
-          <p>{savedQuotes.length > 0 ? `Сохранено сильных фраз: ${savedQuotes.length}` : 'Сохраняй лучшие цитаты после каждого НЕТ.'}</p>
-        </div>
-        <button className="library-open-button" onClick={() => setQuoteLibraryOpen(true)}>
-          <BookOpen size={21} />
-          Открыть библиотеку
-        </button>
-      </section>
-
       <section className="grid-section glass-card">
         <div className="section-heading">
           <div>
@@ -454,11 +442,31 @@ function App() {
           </div>
         </div>
 
-        <div className="no-grid" aria-label="Таблица из 1000 отказов">
-          {Array.from({ length: 1000 }, (_, index) => {
-            const isFilled = index < state.noCount;
-            const isCurrent = index === state.noCount - 1;
-            return <div key={index} className={['no-cell', isFilled ? 'no-cell--filled' : '', isCurrent ? 'no-cell--current' : ''].join(' ')} title={`${index + 1} НЕТ`} />;
+        <div className="no-map" aria-label="Таблица из 1000 отказов с разделением по сотням">
+          {Array.from({ length: 10 }, (_, centuryIndex) => {
+            const startIndex = centuryIndex * 100;
+            const centuryLabel = startIndex + 100;
+
+            return (
+              <div className="no-century" key={centuryLabel}>
+                <div className="no-century__grid">
+                  {Array.from({ length: 100 }, (_, cellIndex) => {
+                    const index = startIndex + cellIndex;
+                    const isFilled = index < state.noCount;
+                    const isCurrent = index === state.noCount - 1;
+
+                    return (
+                      <div
+                        key={index}
+                        className={['no-cell', isFilled ? 'no-cell--filled' : '', isCurrent ? 'no-cell--current' : ''].join(' ')}
+                        title={`${index + 1} НЕТ`}
+                      />
+                    );
+                  })}
+                </div>
+                <div className="no-century__label">{centuryLabel}</div>
+              </div>
+            );
           })}
         </div>
       </section>
@@ -490,6 +498,18 @@ function App() {
             );
           })}
         </div>
+      </section>
+
+      <section className="quote-library-entry glass-card">
+        <div>
+          <p className="eyebrow">библиотека</p>
+          <h2>Цитаты</h2>
+          <p>{savedQuotes.length > 0 ? `Сохранено сильных фраз: ${savedQuotes.length}` : 'Сохраняй лучшие цитаты после каждого НЕТ.'}</p>
+        </div>
+        <button className="library-open-button" onClick={() => setQuoteLibraryOpen(true)}>
+          <BookOpen size={21} />
+          Открыть библиотеку
+        </button>
       </section>
 
       <footer className="footer glass-card">
