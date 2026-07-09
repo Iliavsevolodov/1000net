@@ -111,7 +111,6 @@ button {
   }
 }
 
-.topbar,
 .hero,
 .dashboard,
 .grid-section,
@@ -140,52 +139,32 @@ button {
   -webkit-backdrop-filter: blur(24px) saturate(1.2);
 }
 
-.topbar {
-  z-index: 20;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  margin-bottom: 18px;
-}
-
-.topbar__brand {
-  display: flex;
-  align-items: baseline;
-  gap: 12px;
-}
-
-.topbar__brand span {
-  color: var(--text);
-  font-size: 16px;
-  font-weight: 1000;
-  letter-spacing: -0.04em;
-}
-
-.topbar__brand p {
-  margin: 0;
-  color: var(--muted);
-  font-size: 13px;
-  font-weight: 800;
+.settings-dock {
+  position: absolute;
+  top: 28px;
+  right: max(28px, calc((100vw - 1180px) / 2 + 28px));
+  z-index: 40;
 }
 
 .settings-trigger {
   display: grid;
-  width: 52px;
-  height: 52px;
+  width: 60px;
+  height: 60px;
   place-items: center;
-  border-radius: 18px;
+  border-radius: 22px 30px 20px 34px;
   cursor: pointer;
   color: var(--text);
   transition:
     transform 180ms ease,
     border-color 180ms ease,
-    background 180ms ease;
+    background 180ms ease,
+    border-radius 260ms ease;
 }
 
 .settings-trigger:hover {
   transform: translateY(-1px) rotate(12deg);
   border-color: var(--accent);
+  border-radius: 34px 20px 32px 22px;
 }
 
 .settings-panel {
@@ -195,7 +174,7 @@ button {
   z-index: 30;
   width: min(430px, calc(100vw - 56px));
   padding: 18px;
-  border-radius: 28px;
+  border-radius: 32px 42px 28px 46px;
   animation: pop 180ms ease both;
 }
 
@@ -222,7 +201,7 @@ button {
   height: 42px;
   place-items: center;
   border: 1px solid var(--line);
-  border-radius: 15px;
+  border-radius: 15px 22px 14px 24px;
   cursor: pointer;
   background: var(--surface-soft);
   color: var(--text);
@@ -240,7 +219,7 @@ button {
 .settings-group {
   padding: 14px;
   border: 1px solid var(--line);
-  border-radius: 20px;
+  border-radius: 22px 28px 20px 30px;
   background: var(--surface-soft);
 }
 
@@ -274,7 +253,7 @@ button {
   min-height: 42px;
   place-items: center;
   border: 2px solid rgba(255, 255, 255, 0.42);
-  border-radius: 14px;
+  border-radius: 14px 20px 16px 22px;
   cursor: pointer;
   color: #ffffff;
   box-shadow:
@@ -283,11 +262,13 @@ button {
   transition:
     transform 180ms ease,
     box-shadow 180ms ease,
-    border-color 180ms ease;
+    border-color 180ms ease,
+    border-radius 220ms ease;
 }
 
 .color-swatch:hover {
   transform: translateY(-2px) scale(1.03);
+  border-radius: 22px 14px 24px 16px;
 }
 
 .color-swatch--active {
@@ -333,15 +314,16 @@ button {
 
 .hero {
   display: grid;
-  grid-template-columns: 1fr auto;
+  grid-template-columns: minmax(0, 1fr) auto;
   gap: 20px;
   align-items: stretch;
-  margin-bottom: 18px;
+  margin-bottom: 14px;
+  padding-right: 84px;
 }
 
 .glass-card--hero {
-  padding: 24px;
-  border-radius: 36px;
+  padding: clamp(20px, 4vw, 34px);
+  border-radius: 44px 72px 40px 58px;
 }
 
 .eyebrow {
@@ -363,7 +345,7 @@ h2 {
 
 h1 {
   max-width: 860px;
-  font-size: clamp(64px, 15vw, 190px);
+  font-size: clamp(72px, 16vw, 196px);
   text-shadow: 0 12px 50px rgba(0, 0, 0, 0.08);
 }
 
@@ -372,11 +354,13 @@ h2 {
 }
 
 .hero__text {
-  max-width: 700px;
+  max-width: 740px;
   margin: 18px 0 0;
-  color: var(--muted);
-  font-size: clamp(16px, 2.2vw, 22px);
-  line-height: 1.35;
+  color: var(--text);
+  font-size: clamp(21px, 3vw, 34px);
+  font-weight: 1000;
+  line-height: 1.06;
+  letter-spacing: -0.05em;
 }
 
 .hero__progress {
@@ -387,7 +371,7 @@ h2 {
   padding: 28px;
   overflow: hidden;
   border: 1px solid var(--line);
-  border-radius: 34px;
+  border-radius: 52px 34px 50px 34px;
   background:
     linear-gradient(135deg, color-mix(in srgb, var(--accent), white 14%), var(--accent));
   color: var(--accent-contrast);
@@ -423,9 +407,11 @@ h2 {
 
 .dashboard {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: minmax(220px, 0.85fr) minmax(220px, 0.85fr) minmax(320px, 1.7fr);
+  grid-auto-flow: dense;
   gap: 12px;
   margin-bottom: 14px;
+  padding-right: 84px;
 }
 
 .card {
@@ -433,7 +419,7 @@ h2 {
   min-height: 150px;
   padding: 18px;
   overflow: hidden;
-  border-radius: 26px;
+  border-radius: 34px 48px 30px 42px;
 }
 
 .card::after {
@@ -454,7 +440,7 @@ h2 {
   margin-bottom: 14px;
   place-items: center;
   border: 1px solid var(--line);
-  border-radius: 14px;
+  border-radius: 16px 20px 14px 22px;
   background: var(--surface-soft);
   color: var(--accent);
 }
@@ -504,9 +490,20 @@ h2 {
   color: color-mix(in srgb, var(--accent-contrast), transparent 22%);
 }
 
+.card--wide {
+  min-height: 150px;
+  grid-column: span 1;
+}
+
+.card--quote {
+  border-radius: 58px 32px 62px 36px;
+}
+
 .card--quote strong {
-  font-size: 17px;
-  line-height: 1.32;
+  max-width: 760px;
+  font-size: clamp(20px, 2.2vw, 34px);
+  line-height: 1.05;
+  letter-spacing: -0.045em;
 }
 
 .actions {
@@ -524,7 +521,7 @@ h2 {
   gap: 9px;
   padding: 0 18px;
   border: 1px solid var(--glass-line);
-  border-radius: 18px;
+  border-radius: 18px 28px 16px 30px;
   cursor: pointer;
   background: linear-gradient(135deg, var(--surface-strong), var(--surface));
   color: var(--text);
@@ -534,11 +531,13 @@ h2 {
     transform 180ms ease,
     opacity 180ms ease,
     background 180ms ease,
-    box-shadow 180ms ease;
+    box-shadow 180ms ease,
+    border-radius 220ms ease;
 }
 
 .ghost-button:hover {
   transform: translateY(-2px);
+  border-radius: 30px 16px 28px 18px;
 }
 
 .ghost-button:disabled {
@@ -551,7 +550,7 @@ h2 {
 .saved-quotes,
 .footer {
   padding: 18px;
-  border-radius: 32px;
+  border-radius: 44px 62px 38px 58px;
 }
 
 .grid-section,
@@ -627,7 +626,7 @@ h2 {
   padding: 16px;
   overflow: hidden;
   border: 1px solid var(--line);
-  border-radius: 24px;
+  border-radius: 30px 42px 26px 38px;
   background: var(--surface-soft);
   transition:
     opacity 180ms ease,
@@ -678,7 +677,7 @@ h2 {
   margin-bottom: 16px;
   place-items: center;
   border: 1px solid color-mix(in srgb, var(--accent), white 24%);
-  border-radius: 20px;
+  border-radius: 20px 28px 18px 30px;
   background:
     radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.55), transparent 42%),
     var(--accent);
@@ -713,7 +712,7 @@ h2 {
   place-items: center;
   padding: 26px;
   border: 1px dashed var(--line);
-  border-radius: 24px;
+  border-radius: 32px 44px 28px 46px;
   color: var(--muted);
   text-align: center;
   background: var(--surface-soft);
@@ -746,7 +745,7 @@ h2 {
   min-height: 132px;
   padding: 18px 16px 62px;
   border: 1px solid var(--line);
-  border-radius: 22px;
+  border-radius: 30px 40px 26px 38px;
   background: var(--surface-soft);
 }
 
@@ -772,7 +771,7 @@ h2 {
   height: 38px;
   place-items: center;
   border: 1px solid var(--line);
-  border-radius: 14px;
+  border-radius: 14px 20px 13px 22px;
   cursor: pointer;
   background: var(--surface-strong);
   color: var(--text);
@@ -836,7 +835,7 @@ h2 {
   justify-content: center;
   gap: 10px;
   border: 1px solid color-mix(in srgb, var(--accent), white 28%);
-  border-radius: 24px;
+  border-radius: 24px 38px 22px 40px;
   cursor: pointer;
   background:
     radial-gradient(circle at 20% 0%, rgba(255, 255, 255, 0.38), transparent 8rem),
@@ -852,11 +851,13 @@ h2 {
   transition:
     transform 180ms ease,
     opacity 180ms ease,
-    box-shadow 180ms ease;
+    box-shadow 180ms ease,
+    border-radius 260ms ease;
 }
 
 .sticky-add__button:hover {
   transform: translateY(-2px) scale(1.01);
+  border-radius: 40px 22px 38px 24px;
   box-shadow: 0 24px 80px color-mix(in srgb, var(--accent), transparent 38%);
 }
 
@@ -877,7 +878,7 @@ h2 {
     rgba(5, 6, 10, 0.5);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
-  animation: fadeIn 160ms ease both;
+  animation: quoteOverlayIn 220ms ease both;
 }
 
 .quote-modal {
@@ -885,9 +886,10 @@ h2 {
   width: min(620px, 100%);
   padding: clamp(24px, 5vw, 46px);
   overflow: hidden;
-  border-radius: 36px;
+  border-radius: 48px 72px 42px 64px;
   text-align: center;
-  animation: modalIn 220ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  transform-origin: 50% 58%;
+  animation: quoteLiquidIn 620ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 .quote-modal::before {
@@ -901,6 +903,18 @@ h2 {
   background: color-mix(in srgb, var(--accent), transparent 36%);
   filter: blur(8px);
   transform: translateX(-50%);
+}
+
+.quote-modal::after {
+  position: absolute;
+  right: -80px;
+  bottom: -100px;
+  width: 220px;
+  height: 220px;
+  border-radius: 999px;
+  content: "";
+  background: color-mix(in srgb, var(--accent), transparent 70%);
+  filter: blur(6px);
 }
 
 .quote-close {
@@ -926,6 +940,7 @@ h2 {
   font-weight: 950;
   letter-spacing: 0.12em;
   text-transform: uppercase;
+  animation: quoteChildIn 520ms 140ms ease both;
 }
 
 .quote-text {
@@ -937,6 +952,7 @@ h2 {
   font-weight: 1000;
   line-height: 1.04;
   letter-spacing: -0.055em;
+  animation: quoteChildIn 560ms 220ms ease both;
 }
 
 .quote-actions {
@@ -946,6 +962,7 @@ h2 {
   justify-content: center;
   gap: 10px;
   margin-top: 28px;
+  animation: quoteChildIn 560ms 300ms ease both;
 }
 
 .quote-actions button {
@@ -956,18 +973,20 @@ h2 {
   gap: 8px;
   padding: 0 18px;
   border: 1px solid var(--line);
-  border-radius: 16px;
+  border-radius: 16px 24px 14px 26px;
   cursor: pointer;
   background: var(--surface-soft);
   color: var(--text);
   font-weight: 950;
   transition:
     transform 180ms ease,
-    background 180ms ease;
+    background 180ms ease,
+    border-radius 220ms ease;
 }
 
 .quote-actions button:hover {
   transform: translateY(-1px);
+  border-radius: 26px 14px 24px 16px;
   background: color-mix(in srgb, var(--accent), transparent 72%);
 }
 
@@ -981,6 +1000,7 @@ h2 {
   color: var(--muted);
   font-size: 13px;
   font-weight: 800;
+  animation: quoteChildIn 560ms 360ms ease both;
 }
 
 .toast {
@@ -991,7 +1011,7 @@ h2 {
   max-width: min(420px, calc(100vw - 48px));
   padding: 18px 20px;
   border: 1px solid color-mix(in srgb, var(--accent), white 20%);
-  border-radius: 22px;
+  border-radius: 22px 32px 20px 34px;
   background:
     radial-gradient(circle at 20% 0%, rgba(255, 255, 255, 0.28), transparent 7rem),
     var(--accent);
@@ -1014,39 +1034,79 @@ h2 {
   }
 }
 
-@keyframes fadeIn {
+@keyframes quoteOverlayIn {
   from {
     opacity: 0;
+    backdrop-filter: blur(0);
   }
 
   to {
     opacity: 1;
+    backdrop-filter: blur(14px);
   }
 }
 
-@keyframes modalIn {
+@keyframes quoteLiquidIn {
+  0% {
+    opacity: 0;
+    border-radius: 999px;
+    transform: translateY(24px) scale(0.78) rotate(-1.5deg);
+  }
+
+  56% {
+    opacity: 1;
+    border-radius: 36px 86px 44px 72px;
+    transform: translateY(-4px) scale(1.025) rotate(0.7deg);
+  }
+
+  100% {
+    opacity: 1;
+    border-radius: 48px 72px 42px 64px;
+    transform: translateY(0) scale(1) rotate(0);
+  }
+}
+
+@keyframes quoteChildIn {
   from {
     opacity: 0;
-    transform: translateY(18px) scale(0.94);
+    transform: translateY(12px);
   }
 
   to {
     opacity: 1;
-    transform: translateY(0) scale(1);
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 1080px) {
+  .hero,
+  .dashboard {
+    padding-right: 0;
+  }
+
+  .settings-dock {
+    right: 28px;
+  }
+
+  .dashboard {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .card--wide {
+    grid-column: 1 / -1;
   }
 }
 
 @media (max-width: 980px) {
-  .hero,
-  .dashboard {
+  .hero {
     grid-template-columns: 1fr;
+    padding-top: 62px;
   }
 
   .hero__progress {
     min-width: 0;
   }
 
-  .dashboard,
   .level-list,
   .saved-list {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1063,8 +1123,14 @@ h2 {
     padding: 14px 14px 112px;
   }
 
-  .topbar__brand p {
-    display: none;
+  .settings-dock {
+    top: 14px;
+    right: 14px;
+  }
+
+  .settings-trigger {
+    width: 52px;
+    height: 52px;
   }
 
   .settings-panel {
@@ -1080,6 +1146,7 @@ h2 {
     flex-direction: column;
   }
 
+  .dashboard,
   .level-list,
   .saved-list {
     grid-template-columns: 1fr;
@@ -1091,7 +1158,7 @@ h2 {
   .saved-quotes,
   .footer {
     padding: 14px;
-    border-radius: 24px;
+    border-radius: 30px 42px 26px 38px;
   }
 
   .section-heading,
@@ -1122,6 +1189,6 @@ h2 {
 
   .sticky-add__button {
     min-height: 62px;
-    border-radius: 22px;
+    border-radius: 22px 34px 20px 36px;
   }
 }
