@@ -4,6 +4,7 @@ import App from './App';
 import './styles.css';
 import './library.css';
 import './spacing-fixes.css';
+import './animations.css';
 
 async function removeOldPwaCache() {
   try {
