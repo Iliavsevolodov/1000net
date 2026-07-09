@@ -5,6 +5,7 @@ import './styles.css';
 import './library.css';
 import './spacing-fixes.css';
 import './animations.css';
+import './library-modal-fixes.css';
 
 async function removeOldPwaCache() {
   try {
