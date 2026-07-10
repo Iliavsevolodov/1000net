@@ -1,0 +1,193 @@
+.library-overlay {
+  z-index: 160 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: max(12px, env(safe-area-inset-top)) 12px max(12px, env(safe-area-inset-bottom)) !important;
+}
+
+.library-shell {
+  position: relative !important;
+  width: min(760px, 100%) !important;
+  max-height: min(88vh, 920px) !important;
+  margin: 0 auto !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  border-radius: 30px !important;
+  background:
+    radial-gradient(circle at 95% 0%, color-mix(in srgb, var(--accent-2, var(--accent)), transparent 88%), transparent 16rem),
+    var(--surface) !important;
+}
+
+.library-header {
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 5 !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) 48px !important;
+  gap: 12px !important;
+  align-items: start !important;
+  margin: 0 !important;
+  padding: 22px 22px 16px !important;
+  border-bottom: 1px solid var(--line) !important;
+  background:
+    linear-gradient(to bottom, var(--surface) 0%, color-mix(in srgb, var(--surface), transparent 6%) 100%) !important;
+  backdrop-filter: blur(18px) saturate(1.1) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(1.1) !important;
+}
+
+.library-header h2 {
+  max-width: 100% !important;
+  margin: 0 !important;
+  font-size: clamp(40px, 9vw, 68px) !important;
+  line-height: 0.88 !important;
+  letter-spacing: -0.085em !important;
+  text-wrap: balance;
+}
+
+.library-header .eyebrow {
+  margin: 0 0 8px !important;
+  font-size: 11px !important;
+  line-height: 1 !important;
+}
+
+.library-header p:not(.eyebrow) {
+  max-width: 100% !important;
+  margin: 10px 0 0 !important;
+  font-size: 14px !important;
+  line-height: 1.28 !important;
+}
+
+.library-close {
+  position: sticky !important;
+  top: 18px !important;
+  right: 0 !important;
+  z-index: 6 !important;
+  width: 48px !important;
+  height: 48px !important;
+  border-radius: 17px !important;
+  background: var(--surface-soft) !important;
+  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.12) !important;
+}
+
+.library-grid {
+  display: grid !important;
+  grid-template-columns: 1fr !important;
+  gap: 12px !important;
+  max-height: calc(min(88vh, 920px) - 160px) !important;
+  padding: 16px 22px 24px !important;
+  overflow-y: auto !important;
+  overscroll-behavior: contain !important;
+}
+
+.library-card {
+  min-height: auto !important;
+  padding: 18px !important;
+  border-radius: 24px !important;
+  background:
+    radial-gradient(circle at 100% 100%, color-mix(in srgb, var(--accent-2, var(--accent)), transparent 86%), transparent 9rem),
+    var(--surface-soft) !important;
+}
+
+.library-card::after {
+  width: 86px !important;
+  height: 86px !important;
+  right: -28px !important;
+  bottom: -34px !important;
+  background: color-mix(in srgb, var(--accent), transparent 88%) !important;
+}
+
+.library-card span {
+  margin-bottom: 10px !important;
+  font-size: 10px !important;
+  letter-spacing: 0.13em !important;
+}
+
+.library-card p {
+  font-size: clamp(19px, 4.8vw, 28px) !important;
+  line-height: 1.05 !important;
+  letter-spacing: -0.055em !important;
+}
+
+.library-card__actions {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 9px !important;
+  margin-top: 16px !important;
+}
+
+.library-card__actions button {
+  width: 100% !important;
+  min-height: 46px !important;
+  padding: 0 12px !important;
+  border-radius: 16px !important;
+  font-size: 13px !important;
+}
+
+.library-card__actions button:first-child {
+  border-color: color-mix(in srgb, var(--accent-2, var(--accent)), transparent 62%) !important;
+  background: color-mix(in srgb, var(--accent-2, var(--accent)), var(--surface-strong) 72%) !important;
+}
+
+.library-card__actions button:nth-child(2) {
+  background: var(--surface-strong) !important;
+}
+
+.library-empty {
+  margin: 16px 22px 24px !important;
+  min-height: 280px !important;
+}
+
+@media (max-width: 640px) {
+  .library-overlay {
+    align-items: stretch !important;
+    padding: max(10px, env(safe-area-inset-top)) 10px max(10px, env(safe-area-inset-bottom)) !important;
+  }
+
+  .library-shell {
+    width: 100% !important;
+    max-height: calc(100vh - max(20px, env(safe-area-inset-top)) - max(20px, env(safe-area-inset-bottom))) !important;
+    border-radius: 28px !important;
+  }
+
+  .library-header {
+    grid-template-columns: minmax(0, 1fr) 46px !important;
+    padding: 18px 18px 14px !important;
+  }
+
+  .library-header h2 {
+    font-size: clamp(38px, 12vw, 58px) !important;
+  }
+
+  .library-header p:not(.eyebrow) {
+    font-size: 13px !important;
+  }
+
+  .library-close {
+    width: 46px !important;
+    height: 46px !important;
+  }
+
+  .library-grid {
+    max-height: calc(100vh - 230px) !important;
+    padding: 14px 18px 22px !important;
+  }
+
+  .library-card {
+    padding: 16px !important;
+    border-radius: 22px !important;
+  }
+
+  .library-card p {
+    font-size: clamp(18px, 6vw, 25px) !important;
+  }
+
+  .library-card__actions {
+    grid-template-columns: 1fr !important;
+    gap: 8px !important;
+  }
+
+  .library-card__actions button {
+    min-height: 46px !important;
+  }
+}
