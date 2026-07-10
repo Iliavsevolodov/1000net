@@ -5,6 +5,7 @@ import './styles.css';
 import './library.css';
 import './spacing-fixes.css';
 import './shell-features.css';
+import './profile-carousel.css';
 
 const SERVICE_URL = 'https://iliavsevolodov.github.io/1000net/';
 const TELEGRAM_URL = 'https://t.me/ilya_mlm';
