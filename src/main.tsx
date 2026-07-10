@@ -13,10 +13,15 @@ import './reward-badge.css';
 const SERVICE_URL = 'https://iliavsevolodov.github.io/1000net/';
 const TELEGRAM_URL = 'https://t.me/ilya_mlm';
 const PROGRESS_STORAGE_KEY = 'one-thousand-no-progress';
+const SAVED_QUOTES_STORAGE_KEY = 'one-thousand-no-saved-quotes';
+const DAILY_LOGS_STORAGE_KEY = 'one-thousand-no-daily-logs';
 const REWARD_BADGE_READY_KEY = 'one-thousand-no-reward-badge-ready';
 const REWARD_BADGE_SEEN_KEY = 'one-thousand-no-reward-badge-seen';
 const REWARD_BADGE_UNREAD_KEY = 'one-thousand-no-reward-badge-unread';
 const LEVEL_CELEBRATION_PENDING_KEY = 'one-thousand-no-level-celebration-pending';
+const ACHIEVEMENT_BADGE_READY_KEY = 'one-thousand-no-achievement-badge-ready';
+const ACHIEVEMENT_BADGE_SEEN_KEY = 'one-thousand-no-achievement-badge-seen';
+const ACHIEVEMENT_CELEBRATION_QUEUE_KEY = 'one-thousand-no-achievement-celebration-queue';
 
 const LEVEL_REWARDS = [
   { threshold: 10, id: 'level:10', title: 'Первые шаги', description: 'Ты начал путь и сделал первые действия.' },
@@ -29,6 +34,41 @@ const LEVEL_REWARDS = [
 ];
 
 type LevelReward = (typeof LEVEL_REWARDS)[number];
+
+type DailyLog = {
+  date: string;
+  count: number;
+};
+
+type AchievementStats = {
+  noCount: number;
+  streak: number;
+  activeDays: number;
+  bestDayCount: number;
+  savedQuotesCount: number;
+};
+
+type AchievementReward = {
+  id: string;
+  title: string;
+  description: string;
+  emoji: string;
+  isUnlocked: (stats: AchievementStats) => boolean;
+};
+
+const ACHIEVEMENT_REWARDS: AchievementReward[] = [
+  { id: 'achievement:first-no', title: 'Первое НЕТ', description: 'Ты сделал первый шаг и зафиксировал первый отказ.', emoji: '🥇', isUnlocked: ({ noCount }) => noCount >= 1 },
+  { id: 'achievement:ten-no', title: 'Разогрев', description: '10 НЕТ собраны. Страх уже начинает слабеть.', emoji: '⚡️', isUnlocked: ({ noCount }) => noCount >= 10 },
+  { id: 'achievement:fifty-no', title: 'Уже не страшно', description: '50 НЕТ — ты вошёл в рабочий темп.', emoji: '🔥', isUnlocked: ({ noCount }) => noCount >= 50 },
+  { id: 'achievement:hundred-no', title: 'Первая сотня', description: '100 НЕТ — первый большой психологический рубеж.', emoji: '💯', isUnlocked: ({ noCount }) => noCount >= 100 },
+  { id: 'achievement:three-streak', title: '3 дня подряд', description: 'Ты держишь темп несколько дней без паузы.', emoji: '📈', isUnlocked: ({ streak }) => streak >= 3 },
+  { id: 'achievement:seven-streak', title: 'Неделя действий', description: '7 дней подряд — это уже дисциплина.', emoji: '🏆', isUnlocked: ({ streak }) => streak >= 7 },
+  { id: 'achievement:best-day-ten', title: 'Сильный день', description: '10 НЕТ за один день. Хороший рабочий рывок.', emoji: '🚀', isUnlocked: ({ bestDayCount }) => bestDayCount >= 10 },
+  { id: 'achievement:quote-saver', title: 'Коллекционер мыслей', description: 'Ты сохранил первую цитату в библиотеку.', emoji: '💎', isUnlocked: ({ savedQuotesCount }) => savedQuotesCount >= 1 },
+  { id: 'achievement:active-month', title: '30 активных дней', description: '30 дней с действиями — это уже система.', emoji: '🗓️', isUnlocked: ({ activeDays }) => activeDays >= 30 },
+  { id: 'achievement:five-hundred', title: 'Железная психика', description: '500 НЕТ собраны. Отказы больше не управляют тобой.', emoji: '🛡️', isUnlocked: ({ noCount }) => noCount >= 500 },
+  { id: 'achievement:legend', title: 'Легенда отказов', description: '1000 НЕТ пройдены. Большинство даже не начинает этот путь.', emoji: '👑', isUnlocked: ({ noCount }) => noCount >= 1000 },
+];
 
 async function removeOldPwaCache() {
   try {
@@ -74,6 +114,14 @@ function removeLocalStorage(key: string) {
   }
 }
 
+function readStringList(key: string): string[] {
+  return (readLocalStorage(key) ?? '').split(',').filter(Boolean);
+}
+
+function writeStringList(key: string, value: string[]) {
+  writeLocalStorage(key, Array.from(new Set(value)).join(','));
+}
+
 function getCurrentNoCount() {
   try {
     const stored = readLocalStorage(PROGRESS_STORAGE_KEY);
@@ -84,8 +132,70 @@ function getCurrentNoCount() {
   }
 }
 
+function getSavedQuotesCount() {
+  try {
+    const stored = readLocalStorage(SAVED_QUOTES_STORAGE_KEY);
+    const parsed = stored ? JSON.parse(stored) : [];
+    return Array.isArray(parsed) ? parsed.length : 0;
+  } catch {
+    return 0;
+  }
+}
+
+function getDailyLogs(): DailyLog[] {
+  try {
+    const stored = readLocalStorage(DAILY_LOGS_STORAGE_KEY);
+    const parsed = stored ? JSON.parse(stored) : [];
+    if (!Array.isArray(parsed)) return [];
+
+    return parsed
+      .filter((item) => typeof item?.date === 'string' && typeof item?.count === 'number')
+      .map((item) => ({ date: item.date, count: Math.max(0, item.count) }));
+  } catch {
+    return [];
+  }
+}
+
+function getDateIsoDaysAgo(daysAgo: number): string {
+  const date = new Date();
+  date.setDate(date.getDate() - daysAgo);
+  return date.toISOString().slice(0, 10);
+}
+
+function getCountForDate(logs: DailyLog[], date: string): number {
+  return logs.find((item) => item.date === date)?.count ?? 0;
+}
+
+function getCurrentStreak(logs: DailyLog[]) {
+  let streak = 0;
+
+  for (let index = 0; index < 365; index += 1) {
+    if (getCountForDate(logs, getDateIsoDaysAgo(index)) <= 0) break;
+    streak += 1;
+  }
+
+  return streak;
+}
+
+function getBestDayCount(logs: DailyLog[]) {
+  return logs.reduce((best, item) => (item.count > best ? item.count : best), 0);
+}
+
 function getUnlockedLevels(noCount: number) {
   return LEVEL_REWARDS.filter((level) => noCount >= level.threshold);
+}
+
+function getUnlockedAchievements(noCount: number) {
+  const logs = getDailyLogs();
+  const stats: AchievementStats = {
+    noCount,
+    streak: getCurrentStreak(logs),
+    activeDays: logs.filter((item) => item.count > 0).length,
+    bestDayCount: getBestDayCount(logs),
+    savedQuotesCount: getSavedQuotesCount(),
+  };
+
+  return ACHIEVEMENT_REWARDS.filter((achievement) => achievement.isUnlocked(stats));
 }
 
 function findLevelReward(id: string | null): LevelReward | null {
@@ -93,46 +203,78 @@ function findLevelReward(id: string | null): LevelReward | null {
   return LEVEL_REWARDS.find((level) => level.id === id) ?? null;
 }
 
+function findAchievementReward(id: string | null): AchievementReward | null {
+  if (!id) return null;
+  return ACHIEVEMENT_REWARDS.find((achievement) => achievement.id === id) ?? null;
+}
+
 function hasBlockingOverlay() {
-  return Boolean(document.querySelector('.quote-overlay, .library-overlay, .onboarding-overlay, .level-celebration-overlay'));
+  return Boolean(document.querySelector('.quote-overlay, .library-overlay, .onboarding-overlay, .level-celebration-overlay, .achievement-celebration-overlay'));
 }
 
 function RewardBadgeWatcher() {
   const [hasUnreadReward, setHasUnreadReward] = useState(() => readLocalStorage(REWARD_BADGE_UNREAD_KEY) === 'true');
   const [showHint, setShowHint] = useState(false);
   const [pendingLevel, setPendingLevel] = useState<LevelReward | null>(() => findLevelReward(readLocalStorage(LEVEL_CELEBRATION_PENDING_KEY)));
+  const [pendingAchievementIds, setPendingAchievementIds] = useState<string[]>(() => readStringList(ACHIEVEMENT_CELEBRATION_QUEUE_KEY));
   const [activeLevel, setActiveLevel] = useState<LevelReward | null>(null);
+  const [activeAchievement, setActiveAchievement] = useState<AchievementReward | null>(null);
 
   useEffect(() => {
     const checkRewards = () => {
-      const unlockedLevels = getUnlockedLevels(getCurrentNoCount());
-      const unlockedIds = unlockedLevels.map((level) => level.id);
-      const ready = readLocalStorage(REWARD_BADGE_READY_KEY) === 'true';
-      const seenIds = (readLocalStorage(REWARD_BADGE_SEEN_KEY) ?? '').split(',').filter(Boolean);
+      const noCount = getCurrentNoCount();
+      const unlockedLevels = getUnlockedLevels(noCount);
+      const unlockedLevelIds = unlockedLevels.map((level) => level.id);
+      const levelReady = readLocalStorage(REWARD_BADGE_READY_KEY) === 'true';
+      const seenLevelIds = readStringList(REWARD_BADGE_SEEN_KEY);
 
-      if (!ready) {
+      if (!levelReady) {
         writeLocalStorage(REWARD_BADGE_READY_KEY, 'true');
-        writeLocalStorage(REWARD_BADGE_SEEN_KEY, unlockedIds.join(','));
+        writeStringList(REWARD_BADGE_SEEN_KEY, unlockedLevelIds);
         writeLocalStorage(REWARD_BADGE_UNREAD_KEY, 'false');
         removeLocalStorage(LEVEL_CELEBRATION_PENDING_KEY);
         setHasUnreadReward(false);
         setPendingLevel(null);
+      } else {
+        const newLevelIds = unlockedLevelIds.filter((id) => !seenLevelIds.includes(id));
+        if (newLevelIds.length > 0) {
+          const latestNewId = newLevelIds[newLevelIds.length - 1];
+          const latestLevel = findLevelReward(latestNewId);
+
+          writeStringList(REWARD_BADGE_SEEN_KEY, [...seenLevelIds, ...newLevelIds]);
+          writeLocalStorage(REWARD_BADGE_UNREAD_KEY, 'true');
+          setHasUnreadReward(true);
+
+          if (latestLevel && !readLocalStorage(LEVEL_CELEBRATION_PENDING_KEY)) {
+            writeLocalStorage(LEVEL_CELEBRATION_PENDING_KEY, latestLevel.id);
+            setPendingLevel(latestLevel);
+          }
+        }
+      }
+
+      const unlockedAchievements = getUnlockedAchievements(noCount);
+      const unlockedAchievementIds = unlockedAchievements.map((achievement) => achievement.id);
+      const achievementReady = readLocalStorage(ACHIEVEMENT_BADGE_READY_KEY) === 'true';
+      const seenAchievementIds = readStringList(ACHIEVEMENT_BADGE_SEEN_KEY);
+
+      if (!achievementReady) {
+        writeLocalStorage(ACHIEVEMENT_BADGE_READY_KEY, 'true');
+        writeStringList(ACHIEVEMENT_BADGE_SEEN_KEY, unlockedAchievementIds);
+        writeStringList(ACHIEVEMENT_CELEBRATION_QUEUE_KEY, []);
+        setPendingAchievementIds([]);
         return;
       }
 
-      const newIds = unlockedIds.filter((id) => !seenIds.includes(id));
-      if (newIds.length > 0) {
-        const latestNewId = newIds[newIds.length - 1];
-        const latestLevel = findLevelReward(latestNewId);
+      const newAchievementIds = unlockedAchievementIds.filter((id) => !seenAchievementIds.includes(id));
+      if (newAchievementIds.length > 0) {
+        const currentQueue = readStringList(ACHIEVEMENT_CELEBRATION_QUEUE_KEY);
+        const nextQueue = Array.from(new Set([...currentQueue, ...newAchievementIds]));
 
-        writeLocalStorage(REWARD_BADGE_SEEN_KEY, [...seenIds, ...newIds].join(','));
+        writeStringList(ACHIEVEMENT_BADGE_SEEN_KEY, [...seenAchievementIds, ...newAchievementIds]);
+        writeStringList(ACHIEVEMENT_CELEBRATION_QUEUE_KEY, nextQueue);
         writeLocalStorage(REWARD_BADGE_UNREAD_KEY, 'true');
         setHasUnreadReward(true);
-
-        if (latestLevel && !readLocalStorage(LEVEL_CELEBRATION_PENDING_KEY)) {
-          writeLocalStorage(LEVEL_CELEBRATION_PENDING_KEY, latestLevel.id);
-          setPendingLevel(latestLevel);
-        }
+        setPendingAchievementIds(nextQueue);
       }
     };
 
@@ -179,17 +321,43 @@ function RewardBadgeWatcher() {
     return () => window.clearInterval(intervalId);
   }, [pendingLevel, activeLevel]);
 
+  useEffect(() => {
+    if (pendingLevel || activeLevel || activeAchievement || pendingAchievementIds.length === 0) return;
+
+    const intervalId = window.setInterval(() => {
+      if (!hasBlockingOverlay()) {
+        const nextAchievement = findAchievementReward(pendingAchievementIds[0]);
+        if (nextAchievement) {
+          setActiveAchievement(nextAchievement);
+        } else {
+          const nextQueue = pendingAchievementIds.slice(1);
+          writeStringList(ACHIEVEMENT_CELEBRATION_QUEUE_KEY, nextQueue);
+          setPendingAchievementIds(nextQueue);
+        }
+      }
+    }, 350);
+
+    return () => window.clearInterval(intervalId);
+  }, [pendingLevel, activeLevel, activeAchievement, pendingAchievementIds]);
+
   function closeLevelCelebration() {
     setActiveLevel(null);
     setPendingLevel(null);
     removeLocalStorage(LEVEL_CELEBRATION_PENDING_KEY);
   }
 
+  function closeAchievementCelebration() {
+    const nextQueue = pendingAchievementIds.slice(1);
+    setActiveAchievement(null);
+    setPendingAchievementIds(nextQueue);
+    writeStringList(ACHIEVEMENT_CELEBRATION_QUEUE_KEY, nextQueue);
+  }
+
   return (
     <>
       {showHint && <div className="profile-reward-hint">Новая награда находится тут</div>}
 
-      {activeLevel && !hasBlockingOverlay() && (
+      {activeLevel && (
         <div className="level-celebration-overlay" role="dialog" aria-modal="true" aria-label="Поздравление с новым уровнем">
           <div className="level-celebration-card">
             <button className="level-celebration-close" type="button" onClick={closeLevelCelebration} aria-label="Закрыть поздравление">
@@ -202,6 +370,24 @@ function RewardBadgeWatcher() {
             <span>{activeLevel.description}</span>
             <button className="level-celebration-action" type="button" onClick={closeLevelCelebration}>
               Забрать награду
+            </button>
+          </div>
+        </div>
+      )}
+
+      {activeAchievement && (
+        <div className="achievement-celebration-overlay" role="dialog" aria-modal="true" aria-label="Поздравление с новым достижением">
+          <div className="level-celebration-card level-celebration-card--achievement">
+            <button className="level-celebration-close" type="button" onClick={closeAchievementCelebration} aria-label="Закрыть поздравление">
+              ×
+            </button>
+            <div className="level-celebration-badge">новое достижение</div>
+            <div className="level-celebration-icon">{activeAchievement.emoji}</div>
+            <p>Вау, награда</p>
+            <h2>{activeAchievement.title}</h2>
+            <span>{activeAchievement.description}</span>
+            <button className="level-celebration-action" type="button" onClick={closeAchievementCelebration}>
+              Забрать достижение
             </button>
           </div>
         </div>
