@@ -1,7 +1,7 @@
 .app {
-  --accent-2: color-mix(in srgb, var(--accent), #3030a3 34%);
-  --accent-3: color-mix(in srgb, var(--accent), #111318 28%);
-  --accent-wash: color-mix(in srgb, var(--accent), transparent 84%);
+  --accent-2: #3030a3;
+  --accent-3: #111318;
+  --accent-wash: color-mix(in srgb, var(--accent), transparent 88%);
 }
 
 .app[style*="#FFD21F"],
@@ -80,7 +80,7 @@
 }
 
 .settings-page .settings-group:first-of-type .settings-label span::after {
-  content: "Цветовая гамма";
+  content: "Цветовая палитра";
   font-size: 16px;
 }
 
@@ -88,7 +88,7 @@
   display: block;
   margin-top: 4px;
   color: var(--muted);
-  content: "12 готовых сочетаний из 3 цветов";
+  content: "3 отдельных акцента: главный, дополнительный и глубокий";
   font-size: 12px;
   font-weight: 800;
   letter-spacing: -0.02em;
@@ -102,107 +102,161 @@
 
 .color-swatch {
   position: relative !important;
-  display: flex !important;
+  display: grid !important;
   width: auto !important;
-  height: 74px !important;
-  min-height: 74px !important;
-  align-items: flex-end !important;
-  justify-content: flex-start !important;
-  padding: 10px !important;
+  height: 82px !important;
+  min-height: 82px !important;
+  grid-template-columns: 1.25fr 0.9fr 0.75fr !important;
+  align-items: stretch !important;
+  justify-content: stretch !important;
+  gap: 5px !important;
+  padding: 8px !important;
   overflow: hidden !important;
   border: 1px solid rgba(17, 19, 24, 0.1) !important;
   border-radius: 22px !important;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.34), 0 14px 34px rgba(17, 19, 24, 0.08) !important;
+  background: rgba(255, 255, 255, 0.68) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.44), 0 14px 34px rgba(17, 19, 24, 0.08) !important;
   transform: none !important;
 }
 
-.color-swatch::before {
-  position: absolute;
-  inset: 0;
+.color-swatch::before,
+.color-swatch::after {
+  display: block;
+  min-width: 0;
+  height: 100%;
+  border-radius: 15px;
   content: "";
-  background: inherit;
+}
+
+.color-swatch::before {
+  background: var(--palette-a, var(--accent));
 }
 
 .color-swatch::after {
-  position: relative;
-  z-index: 1;
-  display: inline-flex;
-  max-width: 100%;
-  min-height: 24px;
-  align-items: center;
-  padding: 0 8px;
-  overflow: hidden;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.72);
-  color: #111318;
-  content: attr(title);
-  font-size: 11px;
-  font-weight: 1000;
-  line-height: 1;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  background: var(--palette-b, var(--accent-2));
 }
 
 .color-swatch svg {
   position: absolute;
   top: 9px;
   right: 9px;
-  z-index: 2;
+  z-index: 3;
   width: 24px;
   height: 24px;
   padding: 4px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.82);
+  background: rgba(255, 255, 255, 0.86);
   color: #111318;
 }
 
-.color-swatch--active {
-  outline: 3px solid color-mix(in srgb, var(--accent), white 16%) !important;
-  outline-offset: 2px !important;
-  box-shadow: 0 20px 54px color-mix(in srgb, var(--accent), transparent 62%) !important;
+.color-swatch::marker {
+  display: none;
 }
 
-.color-swatch:nth-child(1) { background: linear-gradient(135deg, #ffd21f 0 45%, #3030a3 45% 72%, #111318 72% 100%) !important; }
-.color-swatch:nth-child(2) { background: linear-gradient(135deg, #21b573 0 44%, #ffd21f 44% 70%, #173b32 70% 100%) !important; }
-.color-swatch:nth-child(3) { background: linear-gradient(135deg, #3030a3 0 48%, #ffd21f 48% 72%, #111318 72% 100%) !important; }
-.color-swatch:nth-child(4) { background: linear-gradient(135deg, #2563eb 0 42%, #06b6d4 42% 72%, #111318 72% 100%) !important; }
-.color-swatch:nth-child(5) { background: linear-gradient(135deg, #ef4444 0 43%, #f97316 43% 72%, #111318 72% 100%) !important; }
-.color-swatch:nth-child(6) { background: linear-gradient(135deg, #f97316 0 44%, #ffd21f 44% 72%, #1f2937 72% 100%) !important; }
-.color-swatch:nth-child(7) { background: linear-gradient(135deg, #7c3aed 0 44%, #ec4899 44% 72%, #111318 72% 100%) !important; }
-.color-swatch:nth-child(8) { background: linear-gradient(135deg, #ec4899 0 44%, #facc15 44% 70%, #312e81 70% 100%) !important; }
-.color-swatch:nth-child(9) { background: linear-gradient(135deg, #06b6d4 0 44%, #2dd4bf 44% 72%, #0f172a 72% 100%) !important; }
-.color-swatch:nth-child(10) { background: linear-gradient(135deg, #d6a21e 0 44%, #facc15 44% 70%, #374151 70% 100%) !important; }
-.color-swatch:nth-child(11) { background: linear-gradient(135deg, #374151 0 44%, #ffd21f 44% 70%, #94a3b8 70% 100%) !important; }
-.color-swatch:nth-child(12) { background: linear-gradient(135deg, #2dd4bf 0 44%, #21b573 44% 72%, #111318 72% 100%) !important; }
+.color-swatch {
+  color: transparent !important;
+}
+
+.color-swatch::selection {
+  background: transparent;
+}
+
+.color-swatch--active {
+  outline: 3px solid color-mix(in srgb, var(--accent), white 10%) !important;
+  outline-offset: 2px !important;
+  box-shadow: 0 20px 54px color-mix(in srgb, var(--accent), transparent 70%) !important;
+}
+
+.color-swatch:nth-child(1) { --palette-a: #ffd21f; --palette-b: #3030a3; --palette-c: #111318; }
+.color-swatch:nth-child(2) { --palette-a: #21b573; --palette-b: #ffd21f; --palette-c: #173b32; }
+.color-swatch:nth-child(3) { --palette-a: #3030a3; --palette-b: #ffd21f; --palette-c: #111318; }
+.color-swatch:nth-child(4) { --palette-a: #2563eb; --palette-b: #06b6d4; --palette-c: #111318; }
+.color-swatch:nth-child(5) { --palette-a: #ef4444; --palette-b: #f97316; --palette-c: #111318; }
+.color-swatch:nth-child(6) { --palette-a: #f97316; --palette-b: #ffd21f; --palette-c: #1f2937; }
+.color-swatch:nth-child(7) { --palette-a: #7c3aed; --palette-b: #ec4899; --palette-c: #111318; }
+.color-swatch:nth-child(8) { --palette-a: #ec4899; --palette-b: #facc15; --palette-c: #312e81; }
+.color-swatch:nth-child(9) { --palette-a: #06b6d4; --palette-b: #2dd4bf; --palette-c: #0f172a; }
+.color-swatch:nth-child(10) { --palette-a: #d6a21e; --palette-b: #facc15; --palette-c: #374151; }
+.color-swatch:nth-child(11) { --palette-a: #374151; --palette-b: #ffd21f; --palette-c: #94a3b8; }
+.color-swatch:nth-child(12) { --palette-a: #2dd4bf; --palette-b: #21b573; --palette-c: #111318; }
+
+.color-swatch:nth-child(1),
+.color-swatch:nth-child(2),
+.color-swatch:nth-child(3),
+.color-swatch:nth-child(4),
+.color-swatch:nth-child(5),
+.color-swatch:nth-child(6),
+.color-swatch:nth-child(7),
+.color-swatch:nth-child(8),
+.color-swatch:nth-child(9),
+.color-swatch:nth-child(10),
+.color-swatch:nth-child(11),
+.color-swatch:nth-child(12) {
+  background:
+    linear-gradient(90deg, transparent 0 calc(100% - 8px), var(--palette-c) calc(100% - 8px) 100%),
+    rgba(255, 255, 255, 0.68) !important;
+}
 
 .ambient--one {
-  background: radial-gradient(circle, color-mix(in srgb, var(--accent), transparent 74%), transparent 68%) !important;
+  background: radial-gradient(circle, color-mix(in srgb, var(--accent), transparent 80%), transparent 68%) !important;
 }
 
 .ambient--two {
-  background: radial-gradient(circle, color-mix(in srgb, var(--accent-2), transparent 78%), transparent 68%) !important;
+  background: radial-gradient(circle, color-mix(in srgb, var(--accent-2), transparent 86%), transparent 68%) !important;
 }
 
 .ambient--three {
-  background: radial-gradient(circle, color-mix(in srgb, var(--accent-3), transparent 86%), transparent 68%) !important;
+  background: radial-gradient(circle, color-mix(in srgb, var(--accent-3), transparent 90%), transparent 68%) !important;
 }
 
-.card--accent,
-.rhythm-card--accent,
-.level--reached,
-.achievement--unlocked,
+.card--progress,
 .sticky-add__button,
-.bottom-tab--active {
-  background:
-    radial-gradient(circle at 12% 0%, rgba(255, 255, 255, 0.36), transparent 8rem),
-    linear-gradient(135deg, var(--accent) 0%, color-mix(in srgb, var(--accent), var(--accent-2) 34%) 58%, var(--accent-3) 132%) !important;
+.rhythm-card--accent {
+  background: var(--accent) !important;
+  color: var(--accent-contrast) !important;
 }
 
-.card--accent,
-.rhythm-card--accent {
-  box-shadow: 0 18px 54px color-mix(in srgb, var(--accent), transparent 70%) !important;
+.card--level,
+.level--reached,
+.bottom-tab--active {
+  background: var(--accent-2) !important;
+  color: #ffffff !important;
+}
+
+.card--day,
+.achievement--unlocked {
+  background: var(--accent-3) !important;
+  color: #ffffff !important;
+}
+
+.card--quote {
+  border-color: color-mix(in srgb, var(--accent-2), transparent 58%) !important;
+  background: color-mix(in srgb, var(--accent-2), var(--surface) 88%) !important;
+}
+
+.card--accent .card__icon,
+.rhythm-card--accent .card__icon,
+.level--reached .level__reward,
+.achievement--unlocked .achievement__icon {
+  background: rgba(255, 255, 255, 0.22) !important;
+  color: inherit !important;
+}
+
+.card--accent span,
+.card--accent p,
+.card--level span,
+.card--level p,
+.card--day span,
+.card--day p,
+.rhythm-card--accent span,
+.rhythm-card--accent strong,
+.rhythm-card--accent p,
+.level--reached .level__content span,
+.level--reached strong,
+.level--reached p,
+.achievement--unlocked strong,
+.achievement--unlocked p {
+  color: inherit !important;
 }
 
 .hero,
@@ -214,19 +268,37 @@
 .quote-library-entry,
 .footer {
   background:
-    radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--accent-2), transparent 92%), transparent 14rem),
-    radial-gradient(circle at 0% 100%, color-mix(in srgb, var(--accent), transparent 94%), transparent 16rem),
+    radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--accent-2), transparent 94%), transparent 14rem),
     var(--surface) !important;
 }
 
 .no-cell--filled {
-  background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.24), transparent 42%),
-    linear-gradient(135deg, var(--accent), color-mix(in srgb, var(--accent), var(--accent-2) 28%)) !important;
+  background: var(--accent) !important;
+}
+
+.no-cell:nth-child(3n).no-cell--filled {
+  background: var(--accent-2) !important;
+}
+
+.no-cell:nth-child(5n).no-cell--filled {
+  background: var(--accent-3) !important;
 }
 
 .history-bar span {
-  background: linear-gradient(90deg, var(--accent), var(--accent-2)) !important;
+  background: var(--accent-2) !important;
+}
+
+.support-footer button {
+  background: var(--accent-2) !important;
+  color: #ffffff !important;
+}
+
+.support-footer a:first-child {
+  border-color: color-mix(in srgb, var(--accent), transparent 62%) !important;
+}
+
+.support-footer a:nth-child(2) {
+  border-color: color-mix(in srgb, var(--accent-2), transparent 62%) !important;
 }
 
 @media (max-width: 640px) {
@@ -235,8 +307,8 @@
   }
 
   .color-swatch {
-    height: 62px !important;
-    min-height: 62px !important;
+    height: 66px !important;
+    min-height: 66px !important;
     border-radius: 19px !important;
   }
 }
