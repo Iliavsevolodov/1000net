@@ -16,7 +16,19 @@ const PROGRESS_STORAGE_KEY = 'one-thousand-no-progress';
 const REWARD_BADGE_READY_KEY = 'one-thousand-no-reward-badge-ready';
 const REWARD_BADGE_SEEN_KEY = 'one-thousand-no-reward-badge-seen';
 const REWARD_BADGE_UNREAD_KEY = 'one-thousand-no-reward-badge-unread';
-const LEVEL_THRESHOLDS = [10, 50, 100, 250, 500, 750, 1000];
+const LEVEL_CELEBRATION_PENDING_KEY = 'one-thousand-no-level-celebration-pending';
+
+const LEVEL_REWARDS = [
+  { threshold: 10, id: 'level:10', title: 'Первые шаги', description: 'Ты начал путь и сделал первые действия.' },
+  { threshold: 50, id: 'level:50', title: 'Уже не страшно', description: 'Отказы больше не выглядят как катастрофа.' },
+  { threshold: 100, id: 'level:100', title: 'Вышел из ступора', description: 'Ты перестал откладывать и начал действовать стабильно.' },
+  { threshold: 250, id: 'level:250', title: 'Стабильный игрок', description: 'Ты уже не ждёшь настроения, ты работаешь по системе.' },
+  { threshold: 500, id: 'level:500', title: 'Железная психика', description: 'Отказы больше не сбивают тебя с маршрута.' },
+  { threshold: 750, id: 'level:750', title: 'Машина действий', description: 'Ты стал человеком темпа и дисциплины.' },
+  { threshold: 1000, id: 'level:1000', title: 'Легенда отказов', description: 'Ты прошёл путь, который большинство даже не начинает.' },
+];
+
+type LevelReward = (typeof LEVEL_REWARDS)[number];
 
 async function removeOldPwaCache() {
   try {
@@ -54,6 +66,14 @@ function writeLocalStorage(key: string, value: string) {
   }
 }
 
+function removeLocalStorage(key: string) {
+  try {
+    window.localStorage.removeItem(key);
+  } catch {
+    // Не мешаем работе приложения.
+  }
+}
+
 function getCurrentNoCount() {
   try {
     const stored = readLocalStorage(PROGRESS_STORAGE_KEY);
@@ -64,17 +84,29 @@ function getCurrentNoCount() {
   }
 }
 
-function getUnlockedLevelIds(noCount: number) {
-  return LEVEL_THRESHOLDS.filter((threshold) => noCount >= threshold).map((threshold) => `level:${threshold}`);
+function getUnlockedLevels(noCount: number) {
+  return LEVEL_REWARDS.filter((level) => noCount >= level.threshold);
+}
+
+function findLevelReward(id: string | null): LevelReward | null {
+  if (!id) return null;
+  return LEVEL_REWARDS.find((level) => level.id === id) ?? null;
+}
+
+function hasBlockingOverlay() {
+  return Boolean(document.querySelector('.quote-overlay, .library-overlay, .onboarding-overlay, .level-celebration-overlay'));
 }
 
 function RewardBadgeWatcher() {
   const [hasUnreadReward, setHasUnreadReward] = useState(() => readLocalStorage(REWARD_BADGE_UNREAD_KEY) === 'true');
   const [showHint, setShowHint] = useState(false);
+  const [pendingLevel, setPendingLevel] = useState<LevelReward | null>(() => findLevelReward(readLocalStorage(LEVEL_CELEBRATION_PENDING_KEY)));
+  const [activeLevel, setActiveLevel] = useState<LevelReward | null>(null);
 
   useEffect(() => {
     const checkRewards = () => {
-      const unlockedIds = getUnlockedLevelIds(getCurrentNoCount());
+      const unlockedLevels = getUnlockedLevels(getCurrentNoCount());
+      const unlockedIds = unlockedLevels.map((level) => level.id);
       const ready = readLocalStorage(REWARD_BADGE_READY_KEY) === 'true';
       const seenIds = (readLocalStorage(REWARD_BADGE_SEEN_KEY) ?? '').split(',').filter(Boolean);
 
@@ -82,15 +114,25 @@ function RewardBadgeWatcher() {
         writeLocalStorage(REWARD_BADGE_READY_KEY, 'true');
         writeLocalStorage(REWARD_BADGE_SEEN_KEY, unlockedIds.join(','));
         writeLocalStorage(REWARD_BADGE_UNREAD_KEY, 'false');
+        removeLocalStorage(LEVEL_CELEBRATION_PENDING_KEY);
         setHasUnreadReward(false);
+        setPendingLevel(null);
         return;
       }
 
       const newIds = unlockedIds.filter((id) => !seenIds.includes(id));
       if (newIds.length > 0) {
+        const latestNewId = newIds[newIds.length - 1];
+        const latestLevel = findLevelReward(latestNewId);
+
         writeLocalStorage(REWARD_BADGE_SEEN_KEY, [...seenIds, ...newIds].join(','));
         writeLocalStorage(REWARD_BADGE_UNREAD_KEY, 'true');
         setHasUnreadReward(true);
+
+        if (latestLevel && !readLocalStorage(LEVEL_CELEBRATION_PENDING_KEY)) {
+          writeLocalStorage(LEVEL_CELEBRATION_PENDING_KEY, latestLevel.id);
+          setPendingLevel(latestLevel);
+        }
       }
     };
 
@@ -125,7 +167,47 @@ function RewardBadgeWatcher() {
     return () => window.clearTimeout(timeoutId);
   }, [showHint]);
 
-  return showHint ? <div className="profile-reward-hint">Новая награда находится тут</div> : null;
+  useEffect(() => {
+    if (!pendingLevel || activeLevel) return;
+
+    const intervalId = window.setInterval(() => {
+      if (!hasBlockingOverlay()) {
+        setActiveLevel(pendingLevel);
+      }
+    }, 350);
+
+    return () => window.clearInterval(intervalId);
+  }, [pendingLevel, activeLevel]);
+
+  function closeLevelCelebration() {
+    setActiveLevel(null);
+    setPendingLevel(null);
+    removeLocalStorage(LEVEL_CELEBRATION_PENDING_KEY);
+  }
+
+  return (
+    <>
+      {showHint && <div className="profile-reward-hint">Новая награда находится тут</div>}
+
+      {activeLevel && !hasBlockingOverlay() && (
+        <div className="level-celebration-overlay" role="dialog" aria-modal="true" aria-label="Поздравление с новым уровнем">
+          <div className="level-celebration-card">
+            <button className="level-celebration-close" type="button" onClick={closeLevelCelebration} aria-label="Закрыть поздравление">
+              ×
+            </button>
+            <div className="level-celebration-badge">новый уровень</div>
+            <div className="level-celebration-icon">🏆</div>
+            <p>Поздравляем</p>
+            <h2>{activeLevel.title}</h2>
+            <span>{activeLevel.description}</span>
+            <button className="level-celebration-action" type="button" onClick={closeLevelCelebration}>
+              Забрать награду
+            </button>
+          </div>
+        </div>
+      )}
+    </>
+  );
 }
 
 function LoadingScreen() {
