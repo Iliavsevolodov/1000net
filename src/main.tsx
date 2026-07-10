@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
+import RewardSystem from './RewardSystem';
 import './styles.css';
 import './library.css';
 import './spacing-fixes.css';
@@ -8,6 +9,7 @@ import './shell-features.css';
 import './profile-carousel.css';
 import './palette-system.css';
 import './library-layout-fix.css';
+import './reward-system.css';
 
 const SERVICE_URL = 'https://iliavsevolodov.github.io/1000net/';
 const TELEGRAM_URL = 'https://t.me/ilya_mlm';
@@ -108,6 +110,7 @@ function Root() {
   return (
     <React.StrictMode>
       <App />
+      <RewardSystem />
       <SupportFooter />
       <LoadingScreen />
     </React.StrictMode>
