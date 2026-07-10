@@ -49,7 +49,8 @@ body.has-profile-reward-dot .bottom-tabs .bottom-tab:nth-child(2)::after {
   box-shadow: 0 0 0 6px rgba(239, 68, 68, 0.14);
 }
 
-.level-celebration-overlay {
+.level-celebration-overlay,
+.achievement-celebration-overlay {
   position: fixed;
   inset: 0;
   z-index: 142;
@@ -62,6 +63,13 @@ body.has-profile-reward-dot .bottom-tabs .bottom-tab:nth-child(2)::after {
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   animation: levelCelebrationOverlayIn 180ms ease both;
+}
+
+.achievement-celebration-overlay {
+  background:
+    radial-gradient(circle at 24% 18%, color-mix(in srgb, var(--accent), transparent 56%), transparent 15rem),
+    radial-gradient(circle at 78% 20%, color-mix(in srgb, var(--accent-2), transparent 62%), transparent 13rem),
+    rgba(7, 8, 13, 0.58);
 }
 
 .level-celebration-card {
@@ -80,6 +88,14 @@ body.has-profile-reward-dot .bottom-tabs .bottom-tab:nth-child(2)::after {
     0 32px 90px rgba(0, 0, 0, 0.28),
     inset 0 1px 0 rgba(255, 255, 255, 0.76);
   animation: levelCelebrationCardIn 420ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.level-celebration-card--achievement {
+  border-color: color-mix(in srgb, var(--accent-2), #ffffff 38%);
+  background:
+    radial-gradient(circle at 86% 8%, color-mix(in srgb, var(--accent-2), transparent 48%), transparent 12rem),
+    radial-gradient(circle at 12% 0%, color-mix(in srgb, var(--accent), transparent 52%), transparent 10rem),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0.84));
 }
 
 .level-celebration-card::before,
@@ -106,6 +122,16 @@ body.has-profile-reward-dot .bottom-tabs .bottom-tab:nth-child(2)::after {
   width: 8px;
   height: 8px;
   box-shadow: 26px -58px 0 color-mix(in srgb, var(--accent), #ffffff 22%);
+}
+
+.level-celebration-card--achievement::before {
+  background: var(--accent-2);
+  box-shadow: 36px 44px 0 var(--accent);
+}
+
+.level-celebration-card--achievement::after {
+  background: var(--accent-3);
+  box-shadow: 26px -58px 0 var(--accent-2);
 }
 
 .level-celebration-close {
@@ -142,6 +168,11 @@ body.has-profile-reward-dot .bottom-tabs .bottom-tab:nth-child(2)::after {
   text-transform: uppercase;
 }
 
+.level-celebration-card--achievement .level-celebration-badge {
+  background: var(--accent-2);
+  color: #ffffff;
+}
+
 .level-celebration-icon {
   display: grid;
   width: 78px;
@@ -152,6 +183,11 @@ body.has-profile-reward-dot .bottom-tabs .bottom-tab:nth-child(2)::after {
   background: #111318;
   font-size: 34px;
   box-shadow: 0 22px 58px rgba(17, 19, 24, 0.28);
+}
+
+.level-celebration-card--achievement .level-celebration-icon {
+  background: var(--accent-3);
+  box-shadow: 0 22px 58px color-mix(in srgb, var(--accent-3), transparent 50%);
 }
 
 .level-celebration-card p {
@@ -201,6 +237,10 @@ body.has-profile-reward-dot .bottom-tabs .bottom-tab:nth-child(2)::after {
   font-size: 16px;
   font-weight: 1000;
   box-shadow: 0 18px 44px rgba(17, 19, 24, 0.24);
+}
+
+.level-celebration-card--achievement .level-celebration-action {
+  background: var(--accent-3);
 }
 
 @keyframes profileRewardHintIn {
