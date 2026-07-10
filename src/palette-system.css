@@ -75,6 +75,10 @@
   --accent-3: #111318;
 }
 
+.settings-page .settings-group:first-of-type {
+  overflow: visible !important;
+}
+
 .settings-page .settings-group:first-of-type .settings-label span {
   font-size: 0;
 }
@@ -96,75 +100,99 @@
 
 .color-grid {
   display: grid !important;
+  width: 100% !important;
   grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-  gap: 10px !important;
+  align-items: stretch !important;
+  gap: 12px !important;
 }
 
 .color-swatch {
   position: relative !important;
-  display: grid !important;
-  width: auto !important;
-  height: 82px !important;
-  min-height: 82px !important;
-  grid-template-columns: 1.25fr 0.9fr 0.75fr !important;
+  display: flex !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  height: 92px !important;
+  min-height: 92px !important;
   align-items: stretch !important;
   justify-content: stretch !important;
-  gap: 5px !important;
   padding: 8px !important;
-  overflow: hidden !important;
+  overflow: visible !important;
   border: 1px solid rgba(17, 19, 24, 0.1) !important;
-  border-radius: 22px !important;
-  background: rgba(255, 255, 255, 0.68) !important;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.44), 0 14px 34px rgba(17, 19, 24, 0.08) !important;
+  border-radius: 24px !important;
+  background: rgba(255, 255, 255, 0.76) !important;
+  color: transparent !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.48),
+    0 14px 34px rgba(17, 19, 24, 0.08) !important;
   transform: none !important;
 }
 
-.color-swatch::before,
-.color-swatch::after {
-  display: block;
-  min-width: 0;
-  height: 100%;
-  border-radius: 15px;
-  content: "";
+.app--dark .color-swatch {
+  border-color: rgba(255, 255, 255, 0.12) !important;
+  background: rgba(255, 255, 255, 0.06) !important;
 }
 
 .color-swatch::before {
-  background: var(--palette-a, var(--accent));
+  position: absolute;
+  inset: 8px;
+  z-index: 1;
+  overflow: hidden;
+  border-radius: 17px;
+  content: "";
+  background:
+    linear-gradient(
+      90deg,
+      var(--palette-a, var(--accent)) 0 36%,
+      var(--palette-b, var(--accent-2)) 36% 68%,
+      var(--palette-c, var(--accent-3)) 68% 100%
+    ) !important;
 }
 
 .color-swatch::after {
-  background: var(--palette-b, var(--accent-2));
+  position: absolute;
+  right: 14px;
+  bottom: 14px;
+  z-index: 2;
+  display: inline-flex;
+  max-width: calc(100% - 28px);
+  min-height: 26px;
+  align-items: center;
+  padding: 0 9px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.82);
+  color: #111318;
+  content: attr(title);
+  font-size: 11px;
+  font-weight: 1000;
+  line-height: 1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  box-shadow: 0 8px 22px rgba(17, 19, 24, 0.1);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 }
 
 .color-swatch svg {
   position: absolute;
-  top: 9px;
-  right: 9px;
+  top: 13px;
+  right: 13px;
   z-index: 3;
-  width: 24px;
-  height: 24px;
-  padding: 4px;
+  width: 26px;
+  height: 26px;
+  padding: 5px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.86);
+  background: rgba(255, 255, 255, 0.88);
   color: #111318;
-}
-
-.color-swatch::marker {
-  display: none;
-}
-
-.color-swatch {
-  color: transparent !important;
-}
-
-.color-swatch::selection {
-  background: transparent;
+  box-shadow: 0 8px 22px rgba(17, 19, 24, 0.12);
 }
 
 .color-swatch--active {
-  outline: 3px solid color-mix(in srgb, var(--accent), white 10%) !important;
-  outline-offset: 2px !important;
-  box-shadow: 0 20px 54px color-mix(in srgb, var(--accent), transparent 70%) !important;
+  outline: 3px solid var(--palette-a, var(--accent)) !important;
+  outline-offset: 3px !important;
+  box-shadow:
+    0 20px 54px color-mix(in srgb, var(--palette-a, var(--accent)), transparent 72%),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5) !important;
 }
 
 .color-swatch:nth-child(1) { --palette-a: #ffd21f; --palette-b: #3030a3; --palette-c: #111318; }
@@ -179,23 +207,6 @@
 .color-swatch:nth-child(10) { --palette-a: #d6a21e; --palette-b: #facc15; --palette-c: #374151; }
 .color-swatch:nth-child(11) { --palette-a: #374151; --palette-b: #ffd21f; --palette-c: #94a3b8; }
 .color-swatch:nth-child(12) { --palette-a: #2dd4bf; --palette-b: #21b573; --palette-c: #111318; }
-
-.color-swatch:nth-child(1),
-.color-swatch:nth-child(2),
-.color-swatch:nth-child(3),
-.color-swatch:nth-child(4),
-.color-swatch:nth-child(5),
-.color-swatch:nth-child(6),
-.color-swatch:nth-child(7),
-.color-swatch:nth-child(8),
-.color-swatch:nth-child(9),
-.color-swatch:nth-child(10),
-.color-swatch:nth-child(11),
-.color-swatch:nth-child(12) {
-  background:
-    linear-gradient(90deg, transparent 0 calc(100% - 8px), var(--palette-c) calc(100% - 8px) 100%),
-    rgba(255, 255, 255, 0.68) !important;
-}
 
 .ambient--one {
   background: radial-gradient(circle, color-mix(in srgb, var(--accent), transparent 80%), transparent 68%) !important;
@@ -304,11 +315,12 @@
 @media (max-width: 640px) {
   .color-grid {
     grid-template-columns: 1fr !important;
+    gap: 12px !important;
   }
 
   .color-swatch {
-    height: 66px !important;
-    min-height: 66px !important;
-    border-radius: 19px !important;
+    height: 84px !important;
+    min-height: 84px !important;
+    border-radius: 22px !important;
   }
 }
