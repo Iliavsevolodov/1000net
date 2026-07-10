@@ -58,6 +58,20 @@ function LoadingScreen() {
 
 function SupportFooter() {
   const [copied, setCopied] = useState(false);
+  const [settingsVisible, setSettingsVisible] = useState(false);
+
+  useEffect(() => {
+    const checkSettingsPage = () => {
+      setSettingsVisible(Boolean(document.querySelector('.settings-page')));
+    };
+
+    checkSettingsPage();
+
+    const observer = new MutationObserver(checkSettingsPage);
+    observer.observe(document.body, { childList: true, subtree: true });
+
+    return () => observer.disconnect();
+  }, []);
 
   async function copyServiceLink() {
     const text = `Крутой сервис для отказов в сетевом ${SERVICE_URL}`;
@@ -72,8 +86,10 @@ function SupportFooter() {
     }
   }
 
+  if (!settingsVisible) return null;
+
   return (
-    <section className="support-footer" aria-label="Связь и поделиться сервисом">
+    <section className="support-footer support-footer--settings" aria-label="Связь и поделиться сервисом">
       <a href={TELEGRAM_URL} target="_blank" rel="noreferrer">
         Задать вопрос
       </a>
@@ -81,7 +97,7 @@ function SupportFooter() {
         Предложить идею
       </a>
       <button type="button" onClick={copyServiceLink}>
-        {copied ? 'Ссылка скопирована' : 'Поделиться сервисом «1000 нет»'}
+        {copied ? 'Ссылка скопирована' : 'Скопировать ссылку'}
       </button>
     </section>
   );
