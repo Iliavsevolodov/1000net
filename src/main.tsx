@@ -9,6 +9,7 @@ import './profile-carousel.css';
 import './palette-system.css';
 import './library-layout-fix.css';
 import './reward-badge.css';
+import './reward-modal-backdrop.css';
 
 const SERVICE_URL = 'https://iliavsevolodov.github.io/1000net/';
 const TELEGRAM_URL = 'https://t.me/ilya_mlm';
