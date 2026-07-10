@@ -80,7 +80,7 @@
   width: min(1180px, calc(100% - 24px));
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 10px;
-  margin: -10px auto calc(174px + env(safe-area-inset-bottom));
+  margin: -10px auto calc(194px + env(safe-area-inset-bottom));
   padding: 12px;
   border: 1px solid rgba(17, 19, 24, 0.08);
   border-radius: 28px;
@@ -126,6 +126,20 @@
   background: #ffd21f;
 }
 
+.app--with-tabs {
+  padding-bottom: calc(238px + env(safe-area-inset-bottom)) !important;
+}
+
+.app--with-tabs .bottom-tabs {
+  bottom: max(8px, env(safe-area-inset-bottom)) !important;
+  z-index: 82 !important;
+}
+
+.app--with-tabs .sticky-add--with-tabs {
+  bottom: calc(78px + env(safe-area-inset-bottom)) !important;
+  z-index: 86 !important;
+}
+
 @keyframes noWave {
   0%,
   100% {
@@ -154,7 +168,7 @@
   .support-footer {
     grid-template-columns: 1fr;
     gap: 8px;
-    margin-bottom: calc(166px + env(safe-area-inset-bottom));
+    margin-bottom: calc(206px + env(safe-area-inset-bottom));
     padding: 10px;
     border-radius: 24px;
   }
@@ -164,6 +178,18 @@
     min-height: 48px;
     border-radius: 17px;
     font-size: 13px;
+  }
+
+  .app--with-tabs {
+    padding-bottom: calc(224px + env(safe-area-inset-bottom)) !important;
+  }
+
+  .app--with-tabs .bottom-tabs {
+    bottom: max(7px, env(safe-area-inset-bottom)) !important;
+  }
+
+  .app--with-tabs .sticky-add--with-tabs {
+    bottom: calc(72px + env(safe-area-inset-bottom)) !important;
   }
 }
 
