@@ -65,6 +65,8 @@ type Achievement = {
   icon: 'medal' | 'trophy';
 };
 
+type AppTab = 'home' | 'profile' | 'analytics' | 'settings';
+
 const STORAGE_KEY = 'one-thousand-no-progress';
 const SAVED_QUOTES_KEY = 'one-thousand-no-saved-quotes';
 const ONBOARDING_KEY = 'one-thousand-no-onboarding-complete';
@@ -115,14 +117,16 @@ function safeWrite(key: string, value: string) {
 
 function createQuotes(source: QuoteParts): Quote[] {
   const result: Quote[] = [];
+  const starters = Array.isArray(source.starters) ? source.starters : [];
+  const endings = Array.isArray(source.endings) ? source.endings : [];
 
-  source.starters.forEach((starter) => {
-    source.endings.forEach((ending) => {
+  starters.forEach((starter) => {
+    endings.forEach((ending) => {
       result.push({ id: result.length + 1, text: `${starter} — ${ending}` });
     });
   });
 
-  return result.slice(0, 1000);
+  return result.length > 0 ? result.slice(0, 1000) : [{ id: 1, text: 'Каждый отказ продвигает тебя к новому уровню.' }];
 }
 
 function getTodayIso(): string {
@@ -145,7 +149,14 @@ function getStoredState(): ProgressState {
 
   try {
     const stored = safeRead(STORAGE_KEY);
-    return stored ? { ...fallback, ...JSON.parse(stored) } : fallback;
+    const parsed = stored ? JSON.parse(stored) : fallback;
+
+    return {
+      noCount: typeof parsed.noCount === 'number' ? Math.min(1000, Math.max(0, parsed.noCount)) : fallback.noCount,
+      themeId: typeof parsed.themeId === 'string' ? parsed.themeId : fallback.themeId,
+      darkMode: Boolean(parsed.darkMode),
+      startDate: typeof parsed.startDate === 'string' ? parsed.startDate : fallback.startDate,
+    };
   } catch {
     return fallback;
   }
@@ -154,7 +165,8 @@ function getStoredState(): ProgressState {
 function getStoredSavedQuotes(): string[] {
   try {
     const stored = safeRead(SAVED_QUOTES_KEY);
-    return stored ? JSON.parse(stored) : [];
+    const parsed = stored ? JSON.parse(stored) : [];
+    return Array.isArray(parsed) ? parsed.filter((item) => typeof item === 'string') : [];
   } catch {
     return [];
   }
@@ -168,7 +180,9 @@ function getStoredDailyLogs(): DailyLog[] {
 
     return parsed
       .filter((item) => typeof item?.date === 'string' && typeof item?.count === 'number')
-      .map((item) => ({ date: item.date, count: Math.max(0, item.count) }));
+      .map((item) => ({ date: item.date, count: Math.max(0, item.count) }))
+      .sort((a, b) => b.date.localeCompare(a.date))
+      .slice(0, 120);
   } catch {
     return [];
   }
@@ -257,7 +271,6 @@ function getCurrentStreak(logs: DailyLog[]): number {
 
 function getBestDay(logs: DailyLog[]): DailyLog | null {
   if (logs.length === 0) return null;
-
   return logs.reduce((best, current) => (current.count > best.count ? current : best), logs[0]);
 }
 
@@ -312,7 +325,7 @@ function getAchievements(params: {
 function App() {
   const [state, setState] = useState<ProgressState>(getStoredState);
   const [toast, setToast] = useState<string>('');
-  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<AppTab>('home');
   const [modalQuote, setModalQuote] = useState<Quote | null>(null);
   const [lastQuoteId, setLastQuoteId] = useState<number | undefined>();
   const [copied, setCopied] = useState(false);
@@ -362,14 +375,14 @@ function App() {
   }, [toast]);
 
   useEffect(() => {
-    const shouldLock = settingsOpen || Boolean(modalQuote) || quoteLibraryOpen || showOnboarding;
+    const shouldLock = Boolean(modalQuote) || quoteLibraryOpen || showOnboarding;
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = shouldLock ? 'hidden' : previousOverflow;
 
     return () => {
       document.body.style.overflow = previousOverflow;
     };
-  }, [settingsOpen, modalQuote, quoteLibraryOpen, showOnboarding]);
+  }, [modalQuote, quoteLibraryOpen, showOnboarding]);
 
   function launchConfetti() {
     const defaults = {
@@ -414,14 +427,12 @@ function App() {
 
   function handleAddNo() {
     if (state.noCount >= 1000) return;
-
     setDailyLogs((current) => updateDailyLog(current, getTodayIso(), 1));
     updateNoCount(state.noCount + 1, { showQuote: true, celebrate: true });
   }
 
   function handleUndo() {
     if (state.noCount <= 0) return;
-
     setDailyLogs((current) => updateDailyLog(current, getTodayIso(), -1));
     updateNoCount(state.noCount - 1);
   }
@@ -432,7 +443,6 @@ function App() {
 
     setState((current) => ({ ...current, noCount: 0, startDate: getTodayIso() }));
     setDailyLogs([]);
-    setSettingsOpen(false);
     setToast('Прогресс сброшен. Новый путь начинается с первого действия.');
   }
 
@@ -473,300 +483,322 @@ function App() {
 
   return (
     <main
-      className={state.darkMode ? 'app app--dark' : 'app'}
+      className={state.darkMode ? 'app app--dark app--with-tabs' : 'app app--with-tabs'}
       style={{ '--accent': theme.color, '--accent-contrast': theme.contrast } as CSSProperties}
     >
       <div className="ambient ambient--one" />
       <div className="ambient ambient--two" />
       <div className="ambient ambient--three" />
 
-      <div className="settings-dock" aria-label="Панель настроек">
-        <button
-          className="settings-trigger"
-          onClick={() => setSettingsOpen((current) => !current)}
-          aria-expanded={settingsOpen}
-          aria-label="Открыть настройки оформления"
-        >
-          <Settings size={22} />
-        </button>
-
-        {settingsOpen && (
-          <div className="settings-panel">
-            <div className="settings-panel__header">
-              <div>
-                <p className="eyebrow">оформление</p>
-                <h2>Настройки</h2>
-              </div>
-              <button className="panel-close" onClick={() => setSettingsOpen(false)} aria-label="Закрыть настройки">
-                <X size={22} />
-              </button>
+      {activeTab === 'home' && (
+        <>
+          <section className="hero glass-card glass-card--hero">
+            <div>
+              <p className="eyebrow">трекер отказов для сетевиков</p>
+              <h1>1000 НЕТ</h1>
+              <p className="hero__text">Каждый отказ продвигает тебя к новому уровню.</p>
             </div>
+          </section>
 
-            <div className="settings-group">
-              <div className="settings-label">
-                <Palette size={18} />
-                <span>Цвет темы</span>
-              </div>
-              <div className="color-grid" aria-label="Выбор цвета темы">
-                {THEMES.map((item) => (
-                  <button
-                    key={item.id}
-                    className={item.id === state.themeId ? 'color-swatch color-swatch--active' : 'color-swatch'}
-                    onClick={() => setState((current) => ({ ...current, themeId: item.id }))}
-                    style={{ backgroundColor: item.color }}
-                    title={item.title}
-                    aria-label={item.title}
-                  >
-                    {item.id === state.themeId && <Check size={18} />}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="settings-group settings-group--row">
-              <div className="settings-label">
-                {state.darkMode ? <Moon size={18} /> : <Sun size={18} />}
-                <span>{state.darkMode ? 'Тёмная тема' : 'Светлая тема'}</span>
-              </div>
-              <button
-                className={state.darkMode ? 'theme-switch theme-switch--dark' : 'theme-switch'}
-                onClick={() => setState((current) => ({ ...current, darkMode: !current.darkMode }))}
-                aria-label="Переключить светлую и тёмную тему"
-              >
-                <span>{state.darkMode ? <Moon size={18} /> : <Sun size={18} />}</span>
-              </button>
-            </div>
-
-            <div className="settings-group install-settings">
-              <div className="settings-label">
-                <BookOpen size={18} />
-                <span>Онбординг</span>
-              </div>
-              <button
-                className="premium-mini-button"
-                onClick={() => {
-                  setShowOnboarding(true);
-                  setOnboardingStep(0);
-                  setSettingsOpen(false);
-                }}
-              >
-                <BookOpen size={17} />
-                Показать инструкцию
-              </button>
-            </div>
-
-            <div className="settings-group settings-danger">
-              <div className="settings-label">
-                <Trash2 size={18} />
-                <span>Сброс прогресса</span>
-              </div>
-              <button className="danger-settings-button" onClick={handleReset}>
-                <Trash2 size={18} />
-                Сбросить всё и начать заново
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
-
-      <section className="hero glass-card glass-card--hero">
-        <div>
-          <p className="eyebrow">трекер отказов для сетевиков</p>
-          <h1>1000 НЕТ</h1>
-          <p className="hero__text">Каждый отказ продвигает тебя к новому уровню.</p>
-        </div>
-      </section>
-
-      <section className="dashboard" aria-label="Дашборд прогресса">
-        <article className="card card--progress card--accent">
-          <div className="card__icon"><Sparkles size={20} /></div>
-          <span>Прогресс</span>
-          <strong>{progressPercent}%</strong>
-          <p>{state.noCount}/1000</p>
-        </article>
-
-        <article className="card card--accent card--level">
-          <div className="card__icon"><Trophy size={20} /></div>
-          <span>Уровень</span>
-          <strong>{currentLevel.title}</strong>
-          <p>{currentLevel.description}</p>
-        </article>
-
-        <article className="card card--day">
-          <div className="card__icon"><CalendarDays size={20} /></div>
-          <span>День отказов</span>
-          <strong>{daysFromStart} день</strong>
-          <p>{nextLevel ? `До «${nextLevel.title}» осталось ${nextLevel.threshold - state.noCount}` : 'Все награды открыты.'}</p>
-        </article>
-
-        <article className="card card--quote card--wide">
-          <div className="card__icon"><Zap size={20} /></div>
-          <span>Фраза дня</span>
-          <strong>{dailyQuote.text}</strong>
-        </article>
-      </section>
-
-      <section className="rhythm-section glass-card">
-        <div className="section-heading">
-          <div>
-            <p className="eyebrow">ритм действий</p>
-            <h2>Статистика</h2>
-          </div>
-          <p>Здесь видно не только количество НЕТ, но и твою стабильность.</p>
-        </div>
-
-        <div className="rhythm-grid">
-          <article className="rhythm-card rhythm-card--accent">
-            <span>Сегодня</span>
-            <strong>{todayCount}</strong>
-            <p>НЕТ за день</p>
-          </article>
-          <article className="rhythm-card">
-            <span>Серия</span>
-            <strong>{currentStreak}</strong>
-            <p>{getDayWord(currentStreak)} подряд</p>
-          </article>
-          <article className="rhythm-card">
-            <span>Лучший день</span>
-            <strong>{bestDay?.count ?? 0}</strong>
-            <p>{bestDay ? bestDay.date.split('-').reverse().slice(0, 2).join('.') : 'пока нет данных'}</p>
-          </article>
-        </div>
-      </section>
-
-      <section className="grid-section glass-card">
-        <div className="section-heading">
-          <div>
-            <p className="eyebrow">1000 ячеек</p>
-            <h2>Карта отказов</h2>
-          </div>
-        </div>
-
-        <div className="no-map" aria-label="Таблица из 1000 отказов с разделением по сотням">
-          {Array.from({ length: 10 }, (_, centuryIndex) => {
-            const startIndex = centuryIndex * 100;
-            const centuryLabel = startIndex + 100;
-
-            return (
-              <div className="no-century" key={centuryLabel}>
-                <div className="no-century__grid">
-                  {Array.from({ length: 100 }, (_, cellIndex) => {
-                    const index = startIndex + cellIndex;
-                    const isFilled = index < state.noCount;
-                    const isCurrent = index === state.noCount - 1;
-
-                    return (
-                      <div
-                        key={index}
-                        className={['no-cell', isFilled ? 'no-cell--filled' : '', isCurrent ? 'no-cell--current' : ''].join(' ')}
-                        title={`${index + 1} НЕТ`}
-                      />
-                    );
-                  })}
-                </div>
-                <div className="no-century__label">{centuryLabel}</div>
-              </div>
-            );
-          })}
-        </div>
-      </section>
-
-      <section className="history-section glass-card">
-        <div className="section-heading">
-          <div>
-            <p className="eyebrow">история</p>
-            <h2>По дням</h2>
-          </div>
-          <p>Последние 7 дней. Пустой день — это не провал, а сигнал вернуться в действие.</p>
-        </div>
-
-        <div className="history-list">
-          {historyDays.map((item, index) => {
-            const maxValue = Math.max(1, ...historyDays.map((day) => day.count));
-            const width = Math.max(4, Math.round((item.count / maxValue) * 100));
-
-            return (
-              <article className="history-row" key={item.date}>
-                <div>
-                  <strong>{formatHistoryDate(item.date, index)}</strong>
-                  <span>{item.date.split('-').reverse().slice(0, 2).join('.')}</span>
-                </div>
-                <div className="history-bar" aria-label={`${item.count} НЕТ`}>
-                  <span style={{ width: `${item.count > 0 ? width : 0}%` }} />
-                </div>
-                <b>{item.count}</b>
-              </article>
-            );
-          })}
-        </div>
-      </section>
-
-      <section className="levels glass-card">
-        <div className="section-heading">
-          <div>
-            <p className="eyebrow">награды</p>
-            <h2>Уровни</h2>
-          </div>
-          <p>Открывай уровни через действия. Закрытые награды ждут своего момента.</p>
-        </div>
-
-        <div className="level-list">
-          {LEVELS.map((level) => {
-            const isReached = state.noCount >= level.threshold;
-            const isLegend = level.threshold === 1000;
-            return (
-              <article key={level.threshold} className={isReached ? 'level level--reached' : 'level level--locked'}>
-                <div className="level__reward">
-                  {isReached ? (isLegend ? <Trophy size={28} /> : <Medal size={28} />) : <LockKeyhole size={26} />}
-                </div>
-                <div className="level__content">
-                  <span>{level.threshold} НЕТ</span>
-                  <strong>{level.title}</strong>
-                  <p>{level.description}</p>
-                </div>
-              </article>
-            );
-          })}
-        </div>
-      </section>
-
-      <section className="achievements-section glass-card">
-        <div className="section-heading">
-          <div>
-            <p className="eyebrow">достижения</p>
-            <h2>{unlockedAchievements}/{achievements.length}</h2>
-          </div>
-          <p>Достижения открываются за количество НЕТ, стабильность, сильные дни и сохранённые цитаты.</p>
-        </div>
-
-        <div className="achievement-list">
-          {achievements.map((achievement) => (
-            <article key={achievement.id} className={achievement.unlocked ? 'achievement achievement--unlocked' : 'achievement achievement--locked'}>
-              <div className="achievement__icon">
-                {achievement.unlocked ? (achievement.icon === 'trophy' ? <Trophy size={24} /> : <Medal size={24} />) : <LockKeyhole size={22} />}
-              </div>
-              <div>
-                <strong>{achievement.title}</strong>
-                <p>{achievement.description}</p>
-              </div>
+          <section className="dashboard" aria-label="Дашборд прогресса">
+            <article className="card card--progress card--accent">
+              <div className="card__icon"><Sparkles size={20} /></div>
+              <span>Прогресс</span>
+              <strong>{progressPercent}%</strong>
+              <p>{state.noCount}/1000</p>
             </article>
-          ))}
-        </div>
-      </section>
 
-      <section className="quote-library-entry glass-card">
-        <div>
-          <p className="eyebrow">библиотека</p>
-          <h2>Цитаты</h2>
-          <p>{savedQuotes.length > 0 ? `Сохранено сильных фраз: ${savedQuotes.length}` : 'Сохраняй лучшие цитаты после каждого НЕТ.'}</p>
-        </div>
-        <button className="library-open-button" onClick={() => setQuoteLibraryOpen(true)}>
-          <BookOpen size={21} />
-          Открыть библиотеку
-        </button>
-      </section>
+            <article className="card card--accent card--level">
+              <div className="card__icon"><Trophy size={20} /></div>
+              <span>Уровень</span>
+              <strong>{currentLevel.title}</strong>
+              <p>{currentLevel.description}</p>
+            </article>
 
-      <footer className="footer glass-card">
+            <article className="card card--day">
+              <div className="card__icon"><CalendarDays size={20} /></div>
+              <span>День отказов</span>
+              <strong>{daysFromStart} день</strong>
+              <p>{nextLevel ? `До «${nextLevel.title}» осталось ${nextLevel.threshold - state.noCount}` : 'Все награды открыты.'}</p>
+            </article>
+
+            <article className="card card--quote card--wide">
+              <div className="card__icon"><Zap size={20} /></div>
+              <span>Фраза дня</span>
+              <strong>{dailyQuote.text}</strong>
+            </article>
+          </section>
+
+          <section className="grid-section glass-card">
+            <div className="section-heading">
+              <div>
+                <p className="eyebrow">1000 ячеек</p>
+                <h2>Карта отказов</h2>
+              </div>
+            </div>
+
+            <div className="no-map" aria-label="Таблица из 1000 отказов с разделением по сотням">
+              {Array.from({ length: 10 }, (_, centuryIndex) => {
+                const startIndex = centuryIndex * 100;
+                const centuryLabel = startIndex + 100;
+
+                return (
+                  <div className="no-century" key={centuryLabel}>
+                    <div className="no-century__grid">
+                      {Array.from({ length: 100 }, (_, cellIndex) => {
+                        const index = startIndex + cellIndex;
+                        const isFilled = index < state.noCount;
+                        const isCurrent = index === state.noCount - 1;
+
+                        return (
+                          <div
+                            key={index}
+                            className={['no-cell', isFilled ? 'no-cell--filled' : '', isCurrent ? 'no-cell--current' : ''].join(' ')}
+                            title={`${index + 1} НЕТ`}
+                          />
+                        );
+                      })}
+                    </div>
+                    <div className="no-century__label">{centuryLabel}</div>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+
+          <section className="quote-library-entry glass-card">
+            <div>
+              <p className="eyebrow">библиотека</p>
+              <h2>Цитаты</h2>
+              <p>{savedQuotes.length > 0 ? `Сохранено сильных фраз: ${savedQuotes.length}` : 'Сохраняй лучшие цитаты после каждого НЕТ.'}</p>
+            </div>
+            <button className="library-open-button" onClick={() => setQuoteLibraryOpen(true)}>
+              <BookOpen size={21} />
+              Открыть библиотеку
+            </button>
+          </section>
+        </>
+      )}
+
+      {activeTab === 'profile' && (
+        <>
+          <section className="hero glass-card glass-card--hero profile-hero">
+            <div>
+              <p className="eyebrow">профиль действия</p>
+              <h1>{state.noCount} НЕТ</h1>
+              <p className="hero__text">Твой путь, уровни, история и достижения в одном месте.</p>
+            </div>
+          </section>
+
+          <section className="rhythm-section glass-card">
+            <div className="section-heading">
+              <div>
+                <p className="eyebrow">ритм действий</p>
+                <h2>Статистика</h2>
+              </div>
+              <p>Здесь видно не только количество НЕТ, но и твою стабильность.</p>
+            </div>
+
+            <div className="rhythm-grid">
+              <article className="rhythm-card rhythm-card--accent">
+                <span>Сегодня</span>
+                <strong>{todayCount}</strong>
+                <p>НЕТ за день</p>
+              </article>
+              <article className="rhythm-card">
+                <span>Серия</span>
+                <strong>{currentStreak}</strong>
+                <p>{getDayWord(currentStreak)} подряд</p>
+              </article>
+              <article className="rhythm-card">
+                <span>Лучший день</span>
+                <strong>{bestDay?.count ?? 0}</strong>
+                <p>{bestDay ? bestDay.date.split('-').reverse().slice(0, 2).join('.') : 'пока нет данных'}</p>
+              </article>
+            </div>
+          </section>
+
+          <section className="history-section glass-card">
+            <div className="section-heading">
+              <div>
+                <p className="eyebrow">история</p>
+                <h2>По дням</h2>
+              </div>
+              <p>Последние 7 дней. Пустой день — это не провал, а сигнал вернуться в действие.</p>
+            </div>
+
+            <div className="history-list">
+              {historyDays.map((item, index) => {
+                const maxValue = Math.max(1, ...historyDays.map((day) => day.count));
+                const width = Math.max(4, Math.round((item.count / maxValue) * 100));
+
+                return (
+                  <article className="history-row" key={item.date}>
+                    <div>
+                      <strong>{formatHistoryDate(item.date, index)}</strong>
+                      <span>{item.date.split('-').reverse().slice(0, 2).join('.')}</span>
+                    </div>
+                    <div className="history-bar" aria-label={`${item.count} НЕТ`}>
+                      <span style={{ width: `${item.count > 0 ? width : 0}%` }} />
+                    </div>
+                    <b>{item.count}</b>
+                  </article>
+                );
+              })}
+            </div>
+          </section>
+
+          <section className="levels glass-card">
+            <div className="section-heading">
+              <div>
+                <p className="eyebrow">награды</p>
+                <h2>Уровни</h2>
+              </div>
+              <p>Открывай уровни через действия. Закрытые награды ждут своего момента.</p>
+            </div>
+
+            <div className="level-list">
+              {LEVELS.map((level) => {
+                const isReached = state.noCount >= level.threshold;
+                const isLegend = level.threshold === 1000;
+                return (
+                  <article key={level.threshold} className={isReached ? 'level level--reached' : 'level level--locked'}>
+                    <div className="level__reward">
+                      {isReached ? (isLegend ? <Trophy size={28} /> : <Medal size={28} />) : <LockKeyhole size={26} />}
+                    </div>
+                    <div className="level__content">
+                      <span>{level.threshold} НЕТ</span>
+                      <strong>{level.title}</strong>
+                      <p>{level.description}</p>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          </section>
+
+          <section className="achievements-section glass-card">
+            <div className="section-heading">
+              <div>
+                <p className="eyebrow">достижения</p>
+                <h2>{unlockedAchievements}/{achievements.length}</h2>
+              </div>
+              <p>Достижения открываются за количество НЕТ, стабильность, сильные дни и сохранённые цитаты.</p>
+            </div>
+
+            <div className="achievement-list">
+              {achievements.map((achievement) => (
+                <article key={achievement.id} className={achievement.unlocked ? 'achievement achievement--unlocked' : 'achievement achievement--locked'}>
+                  <div className="achievement__icon">
+                    {achievement.unlocked ? (achievement.icon === 'trophy' ? <Trophy size={24} /> : <Medal size={24} />) : <LockKeyhole size={22} />}
+                  </div>
+                  <div>
+                    <strong>{achievement.title}</strong>
+                    <p>{achievement.description}</p>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </section>
+        </>
+      )}
+
+      {activeTab === 'analytics' && (
+        <section className="analytics-placeholder glass-card">
+          <p className="eyebrow">аналитика</p>
+          <h2>Скоро здесь будет аналитика</h2>
+          <p>Позже добавим графики, цели на день, средний темп, прогноз до 1000 НЕТ и аналитику по неделям/месяцам.</p>
+          <div className="analytics-preview-grid">
+            <article>
+              <span>Неделя</span>
+              <strong>{historyDays.reduce((sum, item) => sum + item.count, 0)}</strong>
+              <p>НЕТ за 7 дней</p>
+            </article>
+            <article>
+              <span>Средний темп</span>
+              <strong>{Math.round(state.noCount / Math.max(1, daysFromStart))}</strong>
+              <p>НЕТ в день</p>
+            </article>
+          </div>
+        </section>
+      )}
+
+      {activeTab === 'settings' && (
+        <section className="settings-page glass-card">
+          <div className="section-heading">
+            <div>
+              <p className="eyebrow">оформление</p>
+              <h2>Настройки</h2>
+            </div>
+            <p>Шестерёнку убрали. Теперь настройки живут здесь — как в обычном приложении.</p>
+          </div>
+
+          <div className="settings-group">
+            <div className="settings-label">
+              <Palette size={18} />
+              <span>Цвет темы</span>
+            </div>
+            <div className="color-grid" aria-label="Выбор цвета темы">
+              {THEMES.map((item) => (
+                <button
+                  key={item.id}
+                  className={item.id === state.themeId ? 'color-swatch color-swatch--active' : 'color-swatch'}
+                  onClick={() => setState((current) => ({ ...current, themeId: item.id }))}
+                  style={{ backgroundColor: item.color }}
+                  title={item.title}
+                  aria-label={item.title}
+                >
+                  {item.id === state.themeId && <Check size={18} />}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="settings-group settings-group--row">
+            <div className="settings-label">
+              {state.darkMode ? <Moon size={18} /> : <Sun size={18} />}
+              <span>{state.darkMode ? 'Тёмная тема' : 'Светлая тема'}</span>
+            </div>
+            <button
+              className={state.darkMode ? 'theme-switch theme-switch--dark' : 'theme-switch'}
+              onClick={() => setState((current) => ({ ...current, darkMode: !current.darkMode }))}
+              aria-label="Переключить светлую и тёмную тему"
+            >
+              <span>{state.darkMode ? <Moon size={18} /> : <Sun size={18} />}</span>
+            </button>
+          </div>
+
+          <div className="settings-group install-settings">
+            <div className="settings-label">
+              <BookOpen size={18} />
+              <span>Онбординг</span>
+            </div>
+            <button
+              className="premium-mini-button"
+              onClick={() => {
+                setShowOnboarding(true);
+                setOnboardingStep(0);
+              }}
+            >
+              <BookOpen size={17} />
+              Показать инструкцию
+            </button>
+          </div>
+
+          <div className="settings-group settings-danger">
+            <div className="settings-label">
+              <Trash2 size={18} />
+              <span>Сброс прогресса</span>
+            </div>
+            <button className="danger-settings-button" onClick={handleReset}>
+              <Trash2 size={18} />
+              Сбросить всё и начать заново
+            </button>
+          </div>
+        </section>
+      )}
+
+      <footer className="footer glass-card app-footer">
         <div>
           <strong>1000 НЕТ</strong>
           <p>Каждый отказ — это шаг к спокойствию, опыту и внутренней силе.</p>
@@ -774,7 +806,26 @@ function App() {
         <span>Сделано для людей действия ⚡️</span>
       </footer>
 
-      <div className="sticky-add">
+      <nav className="bottom-tabs" aria-label="Нижнее меню приложения">
+        <button className={activeTab === 'home' ? 'bottom-tab bottom-tab--active' : 'bottom-tab'} onClick={() => setActiveTab('home')}>
+          <Sparkles size={19} />
+          <span>Главная</span>
+        </button>
+        <button className={activeTab === 'profile' ? 'bottom-tab bottom-tab--active' : 'bottom-tab'} onClick={() => setActiveTab('profile')}>
+          <Medal size={19} />
+          <span>Профиль</span>
+        </button>
+        <button className={activeTab === 'analytics' ? 'bottom-tab bottom-tab--active' : 'bottom-tab'} onClick={() => setActiveTab('analytics')}>
+          <CalendarDays size={19} />
+          <span>Аналитика</span>
+        </button>
+        <button className={activeTab === 'settings' ? 'bottom-tab bottom-tab--active' : 'bottom-tab'} onClick={() => setActiveTab('settings')}>
+          <Settings size={19} />
+          <span>Настройки</span>
+        </button>
+      </nav>
+
+      <div className="sticky-add sticky-add--with-tabs">
         <div className="sticky-add__inner">
           <button className="sticky-add__undo" onClick={handleUndo} disabled={state.noCount <= 0} aria-label="Отменить последнее действие">
             <RotateCcw size={24} />
