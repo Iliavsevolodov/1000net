@@ -1,0 +1,237 @@
+.levels,
+.achievements-section {
+  overflow: hidden;
+}
+
+.levels .section-heading,
+.achievements-section .section-heading {
+  align-items: flex-start;
+}
+
+.levels .section-heading::after,
+.achievements-section .section-heading::after {
+  align-self: center;
+  flex: 0 0 auto;
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface-soft);
+  color: var(--muted);
+  content: "← свайпай →";
+  font-size: 11px;
+  font-weight: 1000;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.levels .level-list,
+.achievements-section .achievement-list {
+  display: flex !important;
+  grid-template-columns: none !important;
+  gap: 12px !important;
+  margin: 0 -18px;
+  padding: 4px 18px 16px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-padding-inline: 18px;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+}
+
+.levels .level-list::-webkit-scrollbar,
+.achievements-section .achievement-list::-webkit-scrollbar {
+  height: 0;
+}
+
+.levels .level,
+.achievements-section .achievement {
+  position: relative;
+  flex: 0 0 min(320px, 82vw);
+  min-height: 214px;
+  scroll-snap-align: start;
+  border-radius: 28px !important;
+  background:
+    radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--accent), transparent 86%), transparent 10rem),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.82), var(--surface-soft)) !important;
+  box-shadow: 0 18px 52px rgba(17, 19, 24, 0.08);
+  transform: translateZ(0);
+}
+
+.app--dark .levels .level,
+.app--dark .achievements-section .achievement {
+  background:
+    radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--accent), transparent 82%), transparent 10rem),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.06), var(--surface-soft)) !important;
+}
+
+.levels .level::before,
+.achievements-section .achievement::before {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  z-index: 2;
+  width: 46px;
+  height: 46px;
+  border-radius: 17px;
+  content: "";
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.46), transparent 58%),
+    color-mix(in srgb, var(--accent), transparent 20%);
+  box-shadow: 0 10px 28px color-mix(in srgb, var(--accent), transparent 68%);
+}
+
+.levels .level::after,
+.achievements-section .achievement::after {
+  position: absolute;
+  right: -54px;
+  bottom: -64px;
+  width: 170px;
+  height: 170px;
+  border-radius: 999px;
+  content: "";
+  background: color-mix(in srgb, var(--accent), transparent 86%);
+}
+
+.levels .level--reached,
+.achievements-section .achievement--unlocked {
+  border-color: color-mix(in srgb, var(--accent), white 22%) !important;
+  background:
+    radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--accent), transparent 58%), transparent 10rem),
+    linear-gradient(135deg, color-mix(in srgb, var(--accent), white 76%), var(--surface-soft)) !important;
+  box-shadow:
+    0 20px 70px color-mix(in srgb, var(--accent), transparent 78%),
+    inset 0 0 0 1px color-mix(in srgb, var(--accent), transparent 62%) !important;
+}
+
+.levels .level--locked,
+.achievements-section .achievement--locked {
+  opacity: 0.72 !important;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(120, 126, 140, 0.16), transparent 10rem),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.58), var(--surface-soft)) !important;
+}
+
+.levels .level__reward,
+.achievements-section .achievement__icon {
+  position: relative;
+  z-index: 3;
+  width: 64px !important;
+  height: 64px !important;
+  margin-bottom: 20px !important;
+  border-radius: 22px !important;
+  box-shadow: 0 14px 38px color-mix(in srgb, var(--accent), transparent 56%);
+}
+
+.achievements-section .achievement {
+  display: grid !important;
+  grid-template-columns: 64px minmax(0, 1fr) !important;
+  align-items: start !important;
+  gap: 14px !important;
+  padding: 18px !important;
+}
+
+.achievements-section .achievement__icon {
+  margin-bottom: 0 !important;
+}
+
+.levels .level__content,
+.achievements-section .achievement > div:not(.achievement__icon) {
+  position: relative;
+  z-index: 3;
+}
+
+.levels .level__content span {
+  display: inline-flex;
+  min-height: 30px;
+  align-items: center;
+  margin-bottom: 12px;
+  padding: 0 11px;
+  border-radius: 999px;
+  background: rgba(17, 19, 24, 0.08);
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 1000;
+}
+
+.app--dark .levels .level__content span {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.levels .level strong,
+.achievements-section .achievement strong {
+  display: block;
+  max-width: 220px;
+  color: var(--text);
+  font-size: clamp(22px, 5.4vw, 34px) !important;
+  line-height: 0.94 !important;
+  letter-spacing: -0.07em;
+}
+
+.levels .level p,
+.achievements-section .achievement p {
+  max-width: 230px;
+  margin-top: 10px !important;
+  color: var(--muted);
+  font-size: 14px !important;
+  line-height: 1.26 !important;
+}
+
+.levels .level--locked .level__content,
+.achievements-section .achievement--locked > div:not(.achievement__icon) {
+  filter: none !important;
+  opacity: 0.58;
+}
+
+.levels .level--locked .level__reward,
+.achievements-section .achievement--locked .achievement__icon {
+  box-shadow: none !important;
+}
+
+@media (max-width: 640px) {
+  .levels .section-heading,
+  .achievements-section .section-heading {
+    align-items: flex-start;
+  }
+
+  .levels .section-heading::after,
+  .achievements-section .section-heading::after {
+    padding: 7px 10px;
+    font-size: 9px;
+  }
+
+  .levels .level-list,
+  .achievements-section .achievement-list {
+    margin: 0 -14px;
+    padding: 2px 14px 14px;
+    gap: 10px !important;
+  }
+
+  .levels .level,
+  .achievements-section .achievement {
+    flex-basis: min(286px, 84vw);
+    min-height: 198px;
+    border-radius: 24px !important;
+  }
+
+  .achievements-section .achievement {
+    grid-template-columns: 56px minmax(0, 1fr) !important;
+    padding: 14px !important;
+  }
+
+  .levels .level__reward,
+  .achievements-section .achievement__icon {
+    width: 56px !important;
+    height: 56px !important;
+    border-radius: 20px !important;
+  }
+
+  .levels .level strong,
+  .achievements-section .achievement strong {
+    font-size: 23px !important;
+  }
+
+  .levels .level p,
+  .achievements-section .achievement p {
+    font-size: 12px !important;
+  }
+}
