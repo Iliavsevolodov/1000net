@@ -283,16 +283,10 @@
     var(--surface) !important;
 }
 
-.no-cell--filled {
-  background: var(--accent) !important;
-}
-
-.no-cell:nth-child(3n).no-cell--filled {
-  background: var(--accent-2) !important;
-}
-
+.no-cell--filled,
+.no-cell:nth-child(3n).no-cell--filled,
 .no-cell:nth-child(5n).no-cell--filled {
-  background: var(--accent-3) !important;
+  background: var(--accent) !important;
 }
 
 .history-bar span {
